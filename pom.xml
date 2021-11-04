@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.taosdata</groupId>
+    <artifactId>kafka-connect-tdengine</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+    <name>kafka-connect-tdengine</name>
+    <description>Kafka Connect Source and Sink Connectors for TDengine</description>
+    <url>https://github.com/taosdata/kafka-connect-tdengine</url>
+    <inceptionYear>2021</inceptionYear>
+
+    <licenses>
+        <license>
+            <name>AGPL-3.0 License</name>
+            <url>https://www.gnu.org/licenses/agpl-3.0.en.html</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>huolibo</id>
+            <email>huolibo@qq.com</email>
+            <organization>taosdata</organization>
+            <organizationUrl>https://www.taosdata.com</organizationUrl>
+            <roles>
+                <role>creator</role>
+                <role>maintainer</role>
+            </roles>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:https://github.com/taosdata/kafka-connect-tdengine.git</connection>
+        <developerConnection>scm:git:git@github.com:taosdata/kafka-connect-tdengine.git</developerConnection>
+        <url>https://github.com/taosdata/kafka-connect-tdengine</url>
+    </scm>
+
+    <issueManagement>
+        <system>github</system>
+        <url>https://github.com/taosdata/kafka-connect-tdengine/issues</url>
+    </issueManagement>
+
+    <properties>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <tdengine.version>2.0.35</tdengine.version>
+        <kafka.version>2.8.0</kafka.version>
+
+        <!--        test-->
+        <junit.version>5.8.1</junit.version>
+        <mockito.version>4.0.0</mockito.version>
+
+        <confluent.hub.packaging.version>0.12.0</confluent.hub.packaging.version>
+        <surefire.version>2.22.2</surefire.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.taosdata.jdbc</groupId>
+            <artifactId>taos-jdbcdriver</artifactId>
+            <version>${tdengine.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>connect-api</artifactId>
+            <version>${kafka.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>${mockito.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>io.confluent</groupId>
+                <artifactId>kafka-connect-maven-plugin</artifactId>
+                <version>${confluent.hub.packaging.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>kafka-connect</goal>
+                        </goals>
+                        <configuration>
+                            <title>Kafka Connect TDengine</title>
+                            <description>
+                                TDengine is a highly efficient platform to store, query, and analyze time-series data.
+                                It is specially designed and optimized for IoT, Internet of Vehicles, Industrial IoT, IT
+                                Infrastructure and Application Monitoring, etc.
+                                It works like a relational database, such as MySQL, but you are strongly encouraged to
+                                read through the following documentation before you experience it,
+                                especially the Data Modeling sections.
+                            </description>
+                            <logo>logos/TDengineLogo.png</logo>
+
+                            <ownerUsername>taosdata</ownerUsername>
+                            <ownerType>organization</ownerType>
+                            <ownerName>taosdata, Inc.</ownerName>
+                            <ownerUrl>https://www.taosdata.com/</ownerUrl>
+                            <ownerLogo>logos/TDengineLogo.png</ownerLogo>
+
+                            <version>${project.version}</version>
+                            <confluentControlCenterIntegration>true</confluentControlCenterIntegration>
+                            <!--                            <documentationUrl>https://docs.confluent.io/kafka-connect-tdengine/current/index.html</documentationUrl>-->
+                            <requirements>
+                                <requirement>java8+</requirement>
+                            </requirements>
+
+                            <componentTypes>
+                                <componentType>sink</componentType>
+                                <componentType>source</componentType>
+                            </componentTypes>
+
+                            <tags>
+                                <tag>Time Series</tag>
+                                <tag>Database</tag>
+                            </tags>
+
+                            <supportProviderName>taosdata, Inc.</supportProviderName>
+                            <supportUrl>${project.issueManagement.url}</supportUrl>
+                            <supportLogo>logos/TDengineLogo.png</supportLogo>
+
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.3.0</version>
+                <configuration>
+                    <skipAssembly>true</skipAssembly>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${surefire.version}</version>
+            </plugin>
+        </plugins>
+
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+    </build>
+</project>
