@@ -136,10 +136,7 @@
                             <description>
                                 TDengine is a highly efficient platform to store, query, and analyze time-series data.
                                 It is specially designed and optimized for IoT, Internet of Vehicles, Industrial IoT, IT
-                                Infrastructure and Application Monitoring, etc.
-                                It works like a relational database, such as MySQL, but you are strongly encouraged to
-                                read through the following documentation before you experience it,
-                                especially the Data Modeling sections.
+                                Infrastructure and Application Monitoring, etc. It works like a relational database, such as MySQL.
                             </description>
                             <logo>logos/TDengineLogo.png</logo>
 
