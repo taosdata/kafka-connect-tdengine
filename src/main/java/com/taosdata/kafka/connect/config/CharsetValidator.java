@@ -7,11 +7,7 @@ import java.nio.charset.Charset;
 import java.util.List;
 
 /**
- * @author huolibo@qq.com
- * @version v1.0.0
- * @JDK: 1.8
- * @description: charset validator
- * @date 2021-11-04 14:12
+ * charset validator
  */
 public class CharsetValidator implements ConfigDef.Validator {
     public static final CharsetValidator INSTANCE = new CharsetValidator();

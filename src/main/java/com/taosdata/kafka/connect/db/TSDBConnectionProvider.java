@@ -1,4 +1,4 @@
-package com.taosdata.kafka.connect.sink;
+package com.taosdata.kafka.connect.db;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,11 +9,7 @@ import java.sql.SQLException;
 import java.util.Properties;
 
 /**
- * @author huolibo@qq.com
- * @version v1.0.0
- * @JDK: 1.8
- * @description: "jdbc:TAOS" connection
- * @date 2021-11-04 14:12
+ * "jdbc:TAOS" connection
  */
 public class TSDBConnectionProvider implements ConnectionProvider {
     private static final Logger log = LoggerFactory.getLogger(TSDBConnectionProvider.class);

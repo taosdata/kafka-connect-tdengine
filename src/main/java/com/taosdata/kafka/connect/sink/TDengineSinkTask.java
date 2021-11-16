@@ -3,6 +3,10 @@ package com.taosdata.kafka.connect.sink;
 import com.taosdata.jdbc.TSDBDriver;
 import com.taosdata.jdbc.enums.SchemalessProtocolType;
 import com.taosdata.jdbc.enums.SchemalessTimestampType;
+import com.taosdata.kafka.connect.db.CacheProcessor;
+import com.taosdata.kafka.connect.db.ConnectionProvider;
+import com.taosdata.kafka.connect.db.TSDBConnectionProvider;
+import com.taosdata.kafka.connect.db.Processor;
 import com.taosdata.kafka.connect.util.VersionUtil;
 import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.errors.ConnectException;
@@ -17,17 +21,13 @@ import java.sql.SQLException;
 import java.util.*;
 
 /**
- * @author huolibo@qq.com
- * @version v1.0.0
- * @JDK: 1.8
- * @description: tdengine sink task
- * @date 2021-11-04 14:12
+ * tdengine sink task
  */
 public class TDengineSinkTask extends SinkTask {
     private static final Logger log = LoggerFactory.getLogger(TDengineSinkTask.class);
 
     private SinkConfig config;
-    private Writer writer;
+    private Processor writer;
     ErrantRecordReporter reporter;
     int remainingRetries;
 
@@ -60,7 +60,7 @@ public class TDengineSinkTask extends SinkTask {
                 config.getConnectionAttempts(),
                 config.getConnectionBackoffMs()
         );
-        writer = new CacheWriter<>(provider, config.getConnectionDb());
+        writer = new CacheProcessor<>(provider, config.getConnectionDb());
     }
 
     @Override
@@ -135,11 +135,11 @@ public class TDengineSinkTask extends SinkTask {
     }
 
     private SQLException getAllMessagesException(SQLException sqle) {
-        String sqleAllMessages = "Exception chain:" + System.lineSeparator();
+        StringBuilder sqleAllMessages = new StringBuilder("Exception chain:" + System.lineSeparator());
         for (Throwable e : sqle) {
-            sqleAllMessages += e + System.lineSeparator();
+            sqleAllMessages.append(e).append(System.lineSeparator());
         }
-        SQLException sqlAllMessagesException = new SQLException(sqleAllMessages);
+        SQLException sqlAllMessagesException = new SQLException(sqleAllMessages.toString());
         sqlAllMessagesException.setNextException(sqle);
         return sqlAllMessagesException;
     }

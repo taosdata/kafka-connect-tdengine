@@ -8,11 +8,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 
 /**
- * @author huolibo@qq.com
- * @version v1.0.0
- * @JDK: 1.8
- * @description: all sink task need config
- * @date 2021-11-04 14:12
+ * all sink task need config
  */
 public class SinkConfig extends ConnectionConfig {
     private static final Logger log = LoggerFactory.getLogger(SinkConfig.class);

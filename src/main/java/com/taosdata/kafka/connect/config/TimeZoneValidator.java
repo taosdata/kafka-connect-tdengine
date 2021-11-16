@@ -7,11 +7,7 @@ import java.util.Arrays;
 import java.util.TimeZone;
 
 /**
- * @author huolibo@qq.com
- * @version v1.0.0
- * @JDK: 1.8
- * @description: check timezone configuration
- * @date 2021-11-04 14:12
+ * check timezone configuration
  */
 public class TimeZoneValidator implements ConfigDef.Validator{
 

@@ -1,4 +1,4 @@
-package com.taosdata.kafka.connect.sink;
+package com.taosdata.kafka.connect.db;
 
 import com.taosdata.jdbc.SchemalessStatement;
 import com.taosdata.jdbc.enums.SchemalessProtocolType;
@@ -10,16 +10,12 @@ import org.slf4j.LoggerFactory;
 import java.sql.*;
 
 /**
- * @param <T> Connection provider implement
- * @description: cache connection and provide write schemaless function
+ * cache connection and provide write schemaless function
  *
- * @author huolibo@qq.com
- * @version v1.0.0
- * @JDK: 1.8
- * @date 2021-11-04 14:12
+ * @param <T> Connection provider implement
  */
-public class CacheWriter<T extends ConnectionProvider> implements Writer {
-    private static final Logger log = LoggerFactory.getLogger(CacheWriter.class);
+public class CacheProcessor<T extends ConnectionProvider> implements Processor {
+    private static final Logger log = LoggerFactory.getLogger(CacheProcessor.class);
 
     private final ConnectionProvider provider;
 
@@ -27,12 +23,12 @@ public class CacheWriter<T extends ConnectionProvider> implements Writer {
 
     private final String dbName;
 
-    public CacheWriter(T provider, String dbName) {
+    public CacheProcessor(T provider, String dbName) {
         this.provider = provider;
         this.dbName = dbName;
     }
 
-    private synchronized Connection getConnection() throws SQLException {
+    private synchronized java.sql.Connection getConnection() throws SQLException {
         try {
             if (this.connection == null) {
                 this.connection = provider.getConnection();
@@ -51,7 +47,7 @@ public class CacheWriter<T extends ConnectionProvider> implements Writer {
 
     private void initDB() {
         try {
-            String sql = "create database if not exists " + this.dbName ;
+            String sql = "create database if not exists " + this.dbName;
             this.execute(sql);
             sql = "use " + dbName;
             this.execute(sql);
@@ -104,7 +100,7 @@ public class CacheWriter<T extends ConnectionProvider> implements Writer {
         }
     }
 
-    public boolean isConnectionValid(Connection connection) {
+    public boolean isConnectionValid(java.sql.Connection connection) {
         // test query ...
         String query = checkConnectionQuery();
         try (Statement statement = connection.createStatement()) {

@@ -1,4 +1,4 @@
-package com.taosdata.kafka.connect.sink;
+package com.taosdata.kafka.connect.db;
 
 import com.taosdata.jdbc.enums.SchemalessProtocolType;
 import com.taosdata.jdbc.enums.SchemalessTimestampType;
@@ -6,13 +6,9 @@ import com.taosdata.jdbc.enums.SchemalessTimestampType;
 import java.sql.SQLException;
 
 /**
- * @author huolibo@qq.com
- * @version v1.0.0
- * @JDK: 1.8
- * @description: use connection pool to execute
- * @date 2021-11-04 14:12
+ * use connection pool to execute
  */
-public class PoolWriter implements Writer {
+public class PoolProcessor implements Processor {
 
     @Override
     public boolean execute(String sql) throws SQLException {

@@ -1,11 +1,7 @@
 package com.taosdata.kafka.connect.enums;
 
 /**
- * @author huolibo@qq.com
- * @version v1.0.0
- * @JDK: 1.8
- * @description: connection url prefix enum
- * @date 2021-11-04 14:12
+ * connection url prefix enum
  */
 public enum ConnectionTypeEnum {
     TAOS("jdbc:TAOS"),

@@ -7,11 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * @author huolibo@qq.com
- * @version v1.0.0
- * @JDK: 1.8
- * @description: check schemaless config
- * @date 2021-11-04 14:12
+ * check schemaless config
  */
 public class SchemalessValidator implements ConfigDef.Validator{
     private static final Logger log = LoggerFactory.getLogger(SchemalessValidator.class);

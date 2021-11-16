@@ -5,11 +5,7 @@ import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
 
 /**
- * @author huolibo@qq.com
- * @version v1.0.0
- * @description: check url is correct to connect with tdengine
- * @JDK: 1.8
- * @date 2021-11-04 14:41
+ * check url is correct to connect with tdengine
  */
 public class ConnectionUrlValidator implements ConfigDef.Validator{
 

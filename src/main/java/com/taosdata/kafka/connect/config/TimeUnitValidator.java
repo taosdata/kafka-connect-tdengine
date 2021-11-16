@@ -7,11 +7,7 @@ import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author huolibo@qq.com
- * @version v1.0.0
- * @JDK: 1.8
- * @description: check timeunit config
- * @date 2021-11-04 14:12
+ * check timeunit config
  */
 public class TimeUnitValidator implements ConfigDef.Validator {
     public static final TimeUnitValidator INSTANCE = new TimeUnitValidator();

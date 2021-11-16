@@ -14,11 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author huolibo@qq.com
- * @version v1.0.0
- * @JDK: 1.8
- * @description: tdengine sink connection
- * @date 2021-11-04 14:12
+ * tdengine sink connection
  */
 public class TDengineSinkConnector extends SinkConnector {
     private static final Logger log = LoggerFactory.getLogger(TDengineSinkConnector.class);

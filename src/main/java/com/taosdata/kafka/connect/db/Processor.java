@@ -1,11 +1,11 @@
-package com.taosdata.kafka.connect.sink;
+package com.taosdata.kafka.connect.db;
 
 import com.taosdata.jdbc.enums.SchemalessProtocolType;
 import com.taosdata.jdbc.enums.SchemalessTimestampType;
 
 import java.sql.SQLException;
 
-public interface Writer {
+public interface Processor {
 
     /**
      * Executes the given SQL statement
