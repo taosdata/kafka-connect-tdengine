@@ -42,12 +42,12 @@ public class SourceConfig extends ConnectionConfig {
             "The timestamp used for initial queries. If not specified, all data will be retrieved.";
     public static final String TIMESTAMP_INITIAL_DISPLAY = "Unix time value of initial timestamp";
 
-    public static final String BATCH_MAX_ROWS_CONFIG = "batch.max.rows";
-    public static final int BATCH_MAX_ROWS_DEFAULT = 100;
-    private static final String BATCH_MAX_ROWS_DOC =
+    public static final String FETCH_MAX_ROWS_CONFIG = "fetch.max.rows";
+    public static final int FETCH_MAX_ROWS_DEFAULT = 100;
+    private static final String FETCH_MAX_ROWS_DOC =
             "Maximum number of rows to include in a single batch when polling for new data. This "
                     + "setting can be used to limit the amount of data buffered internally in the connector.";
-    private static final String BATCH_MAX_ROWS_DISPLAY = "Max Rows Per Batch";
+    private static final String FETCH_MAX_ROWS_DISPLAY = "Max Rows Per Batch";
 
     public static final String TABLES_CONFIG = "tables";
     private static final String TABLES_DOC = "List of tables for this task to watch for changes.";
@@ -61,7 +61,7 @@ public class SourceConfig extends ConnectionConfig {
     //    private boolean monitorTables;
     private final String topicPrefix;
     private final Timestamp timestampInitial;
-    private final int batchMaxRows;
+    private final int fetchMaxRows;
     private final List<String> tables;
     private final String outFormat;
 
@@ -77,7 +77,7 @@ public class SourceConfig extends ConnectionConfig {
         } else {
             this.timestampInitial = new Timestamp(0L);
         }
-        this.batchMaxRows = this.getInt(BATCH_MAX_ROWS_CONFIG);
+        this.fetchMaxRows = this.getInt(FETCH_MAX_ROWS_CONFIG);
         this.tables = this.getList(SourceConstants.CONFIG_TABLES);
         this.outFormat = this.getString(OUT_FORMAT_CONFIG);
     }
@@ -131,15 +131,15 @@ public class SourceConfig extends ConnectionConfig {
                         TIMESTAMP_INITIAL_DISPLAY
                 )
                 .define(
-                        BATCH_MAX_ROWS_CONFIG,
+                        FETCH_MAX_ROWS_CONFIG,
                         ConfigDef.Type.INT,
-                        BATCH_MAX_ROWS_DEFAULT,
+                        FETCH_MAX_ROWS_DEFAULT,
                         ConfigDef.Importance.LOW,
-                        BATCH_MAX_ROWS_DOC,
+                        FETCH_MAX_ROWS_DOC,
                         READ,
                         ++orderInGroup,
                         ConfigDef.Width.SHORT,
-                        BATCH_MAX_ROWS_DISPLAY
+                        FETCH_MAX_ROWS_DISPLAY
                 )
                 .define(
                         TABLES_CONFIG,
@@ -169,8 +169,8 @@ public class SourceConfig extends ConnectionConfig {
 //        return monitorTables;
 //    }
 
-    public int getBatchMaxRows() {
-        return batchMaxRows;
+    public int getFetchMaxRows() {
+        return fetchMaxRows;
     }
 
     public String getTopicPrefix() {

@@ -52,7 +52,7 @@ public class TDengineSourceTask extends SourceTask {
                 TableExecutor executor;
                 try {
                     executor = new TableExecutor(table, config.getTopicPrefix() + config.getConnectionDb(),
-                            offset, processor, config.getBatchMaxRows(), partition, config.getTimestampInitial(),
+                            offset, processor, config.getFetchMaxRows(), partition, config.getTimestampInitial(),
                             config.getOutFormat());
                 } catch (SQLException e) {
                     log.error("error occur", e);
@@ -81,7 +81,7 @@ public class TDengineSourceTask extends SourceTask {
                 log.trace("Waiting {} ms to poll {} next", nextUpdate - now, executor.getTableName());
                 TimeUnit.MILLISECONDS.sleep(sleepMs);
             } else if (consecutiveEmptyResults.get(executor) > 0) {
-                TimeUnit.MILLISECONDS.sleep(1000);
+                TimeUnit.MILLISECONDS.sleep(config.getPollInterval());
             }
         }
         log.info("start poll new data from" + executor.getTableName());
@@ -89,7 +89,7 @@ public class TDengineSourceTask extends SourceTask {
         try {
             executor.startQuery();
 
-            int batchMaxRows = config.getBatchMaxRows();
+            int batchMaxRows = config.getFetchMaxRows();
             boolean hadNext = true;
             while (results.size() < batchMaxRows && (hadNext = executor.next())) {
                 results.add(executor.extractRecord());
