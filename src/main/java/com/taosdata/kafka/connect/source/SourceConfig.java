@@ -7,6 +7,7 @@ import org.apache.kafka.common.config.ConfigDef;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -17,7 +18,7 @@ public class SourceConfig extends ConnectionConfig {
     private static final String READ = "read";
 
     public static final String POLL_INTERVAL_MS_CONFIG = "poll.interval.ms";
-    public static final int POLL_INTERVAL_MS_DEFAULT = 50 * 1000;
+    public static final int POLL_INTERVAL_MS_DEFAULT = 1000;
     private static final String POLL_INTERVAL_MS_DOC =
             "Frequency in ms to poll for new or removed tables, which may result in updated task "
                     + "configurations to start polling for data in added tables.";
@@ -69,7 +70,7 @@ public class SourceConfig extends ConnectionConfig {
         super(config(), props);
         this.pollInterval = this.getInt(POLL_INTERVAL_MS_CONFIG);
 //        this.monitorTables = this.getBoolean(MONITOR_TABLES_CONFIG);
-        this.topicPrefix = this.getString(TOPIC_PREFIX_CONFIG);
+        this.topicPrefix = this.getString(TOPIC_PREFIX_CONFIG).trim();
         String time = this.getString(TIMESTAMP_INITIAL_CONFIG);
         if (null != time && time.trim().length() > 0) {
             DateTimeFormatter df = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -79,7 +80,7 @@ public class SourceConfig extends ConnectionConfig {
         }
         this.fetchMaxRows = this.getInt(FETCH_MAX_ROWS_CONFIG);
         this.tables = this.getList(SourceConstants.CONFIG_TABLES);
-        this.outFormat = this.getString(OUT_FORMAT_CONFIG);
+        this.outFormat = this.getString(OUT_FORMAT_CONFIG).trim();
     }
 
     public static ConfigDef config() {
@@ -144,6 +145,7 @@ public class SourceConfig extends ConnectionConfig {
                 .define(
                         TABLES_CONFIG,
                         ConfigDef.Type.LIST,
+                        Collections.EMPTY_LIST,
                         ConfigDef.Importance.LOW,
                         TABLES_DOC)
                 .define(

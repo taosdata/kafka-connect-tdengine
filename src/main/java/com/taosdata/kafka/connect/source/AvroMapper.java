@@ -153,7 +153,9 @@ public class AvroMapper extends TableMapper{
                     }
                 }
             }
-            struct.put("tags", map);
+            if(!map.isEmpty()){
+                struct.put("tags", map);
+            }
         } catch (SQLException e) {
             log.error("resultSet get value error", e);
         }

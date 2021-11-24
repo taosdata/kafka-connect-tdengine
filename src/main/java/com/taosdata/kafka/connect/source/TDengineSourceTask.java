@@ -84,7 +84,7 @@ public class TDengineSourceTask extends SourceTask {
                 TimeUnit.MILLISECONDS.sleep(config.getPollInterval());
             }
         }
-        log.info("start poll new data from table: " + executor.getTableName());
+        log.info("start poll new data from table:" + executor.getTableName());
         List<SourceRecord> results = new ArrayList<>();
         try {
             executor.startQuery();

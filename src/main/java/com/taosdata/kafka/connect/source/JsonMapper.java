@@ -95,7 +95,9 @@ public class JsonMapper extends TableMapper{
                     }
                 }
             }
-            jsonObject.put("tags", tagObject);
+            if (!tagObject.isEmpty()) {
+                jsonObject.put("tags", tagObject);
+            }
         } catch (SQLException e) {
             log.error("resultSet get value error", e);
         }
