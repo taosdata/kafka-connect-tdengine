@@ -2,7 +2,7 @@ package com.taosdata.kafka.connect.sink;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.taosdata.kafka.connect.util.VersionUtil;
+import com.taosdata.kafka.connect.util.VersionUtils;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.sink.SinkConnector;
@@ -50,7 +50,7 @@ public class TDengineSinkConnector extends SinkConnector {
 
     @Override
     public String version() {
-        return VersionUtil.getVersion();
+        return VersionUtils.getVersion();
     }
 
     /**

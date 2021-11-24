@@ -3,8 +3,8 @@ package com.taosdata.kafka.connect.util;
 /**
  * create sql statement
  */
-public class SQLUtil {
-    private SQLUtil() {
+public class SQLUtils {
+    private SQLUtils() {
     }
 
     public static String showTableSql() {
@@ -13,5 +13,9 @@ public class SQLUtil {
 
     public static String useTableSql(String dbname) {
         return "use " + dbname;
+    }
+
+    public static String describeTableSql(String dbname) {
+        return "describe " + dbname;
     }
 }

@@ -3,6 +3,7 @@ package com.taosdata.kafka.connect.db;
 import com.taosdata.jdbc.enums.SchemalessProtocolType;
 import com.taosdata.jdbc.enums.SchemalessTimestampType;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 
 /**
@@ -23,6 +24,11 @@ public class PoolProcessor implements Processor {
 
     public void close() {
 
+    }
+
+    @Override
+    public Connection getConnection() throws SQLException {
+        return null;
     }
 
     public void shutdown() throws Exception {

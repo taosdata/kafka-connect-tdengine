@@ -28,7 +28,8 @@ public class CacheProcessor<T extends ConnectionProvider> implements Processor {
         this.dbName = dbName;
     }
 
-    private synchronized java.sql.Connection getConnection() throws SQLException {
+    @Override
+    public Connection getConnection() throws SQLException {
         try {
             if (this.connection == null) {
                 this.connection = provider.getConnection();

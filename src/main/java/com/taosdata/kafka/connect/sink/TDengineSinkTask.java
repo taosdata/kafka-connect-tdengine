@@ -7,7 +7,7 @@ import com.taosdata.kafka.connect.db.CacheProcessor;
 import com.taosdata.kafka.connect.db.ConnectionProvider;
 import com.taosdata.kafka.connect.db.TSDBConnectionProvider;
 import com.taosdata.kafka.connect.db.Processor;
-import com.taosdata.kafka.connect.util.VersionUtil;
+import com.taosdata.kafka.connect.util.VersionUtils;
 import org.apache.kafka.connect.connector.ConnectRecord;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.RetriableException;
@@ -53,7 +53,7 @@ public class TDengineSinkTask extends SinkTask {
         properties.setProperty(TSDBDriver.PROPERTY_KEY_PASSWORD, config.getConnectionPassword());
         properties.setProperty(TSDBDriver.PROPERTY_KEY_CHARSET, config.getCharset());
 //        properties.setProperty(TSDBDriver.PROPERTY_KEY_DBNAME, config.getConnectionDb());
-        properties.setProperty(TSDBDriver.PROPERTY_KEY_TIME_ZONE, config.getTimeZone());
+//        properties.setProperty(TSDBDriver.PROPERTY_KEY_TIME_ZONE, config.getTimeZone());
         ConnectionProvider provider = new TSDBConnectionProvider(
                 config.getConnectionUrl(),
                 properties,
@@ -172,6 +172,6 @@ public class TDengineSinkTask extends SinkTask {
 
     @Override
     public String version() {
-        return VersionUtil.getVersion();
+        return VersionUtils.getVersion();
     }
 }
