@@ -6,13 +6,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.TimeZone;
 
 /**
- * @author huolibo@qq.com
- * @version v1.0.0
- * @JDK: 1.8
- * @description: connection configuration
- * @date 2021-11-04 14:12
+ * connection configuration
  */
 public class ConnectionConfig extends AbstractConfig {
     private static final Logger log = LoggerFactory.getLogger(ConnectionConfig.class);
@@ -56,7 +53,14 @@ public class ConnectionConfig extends AbstractConfig {
     public static final String CONNECTION_BACKOFF_DISPLAY =
             "JDBC connection backoff in milliseconds";
 
+    public static final String CONNECTION_TIMEZONE_CONFIG = "connection.timezone";
+    public static final String CONNECTION_TIMEZONE_DEFAULT = "UTC";
+    private static final String CONNECTION_TIMEZONE_CONFIG_DOC =
+            "timezone used in the connector when querying. Defaults to UTC.";
+    private static final String CONNECTION_TIMEZONE_CONFIG_DISPLAY = "connection time zone";
+
     public static ConfigDef config() {
+        int orderInGroup = 0;
         return new ConfigDef()
                 .define(
                         CONNECTION_URL_CONFIG,
@@ -66,7 +70,7 @@ public class ConnectionConfig extends AbstractConfig {
                         ConfigDef.Importance.HIGH,
                         CONNECTION_URL_DOC,
                         CONNECTION_GROUP,
-                        1,
+                        ++orderInGroup,
                         ConfigDef.Width.LONG,
                         CONNECTION_URL_DISPLAY
                 )
@@ -77,7 +81,7 @@ public class ConnectionConfig extends AbstractConfig {
                         ConfigDef.Importance.HIGH,
                         CONNECTION_USER_DOC,
                         CONNECTION_GROUP,
-                        2,
+                        ++orderInGroup,
                         ConfigDef.Width.MEDIUM,
                         CONNECTION_USER_DISPLAY
                 )
@@ -88,7 +92,7 @@ public class ConnectionConfig extends AbstractConfig {
                         ConfigDef.Importance.HIGH,
                         CONNECTION_PASSWORD_DOC,
                         CONNECTION_GROUP,
-                        3,
+                        ++orderInGroup,
                         ConfigDef.Width.MEDIUM,
                         CONNECTION_PASSWORD_DISPLAY
                 )
@@ -100,7 +104,7 @@ public class ConnectionConfig extends AbstractConfig {
                         ConfigDef.Importance.LOW,
                         CONNECTION_ATTEMPTS_DOC,
                         CONNECTION_GROUP,
-                        4,
+                        ++orderInGroup,
                         ConfigDef.Width.SHORT,
                         CONNECTION_ATTEMPTS_DISPLAY
                 )
@@ -111,7 +115,7 @@ public class ConnectionConfig extends AbstractConfig {
                         ConfigDef.Importance.LOW,
                         CONNECTION_BACKOFF_DOC,
                         CONNECTION_GROUP,
-                        5,
+                        ++orderInGroup,
                         ConfigDef.Width.SHORT,
                         CONNECTION_BACKOFF_DISPLAY
                 )
@@ -122,10 +126,22 @@ public class ConnectionConfig extends AbstractConfig {
                         ConfigDef.Importance.HIGH,
                         CONNECTION_DB_DOC,
                         CONNECTION_GROUP,
-                        6,
+                        ++orderInGroup,
                         ConfigDef.Width.MEDIUM,
                         CONNECTION_DB_DISPLAY
-                );
+                )
+                .define(
+                        CONNECTION_TIMEZONE_CONFIG,
+                        ConfigDef.Type.STRING,
+                        CONNECTION_TIMEZONE_DEFAULT,
+                        TimeZoneValidator.INSTANCE,
+                        ConfigDef.Importance.MEDIUM,
+                        CONNECTION_TIMEZONE_CONFIG_DOC,
+                        CONNECTION_GROUP,
+                        ++orderInGroup,
+                        ConfigDef.Width.MEDIUM,
+                        CONNECTION_TIMEZONE_CONFIG_DISPLAY)
+                ;
     }
 
     private final String connectionUrl;
@@ -134,6 +150,7 @@ public class ConnectionConfig extends AbstractConfig {
     private final int connectionAttempts;
     private final long connectionBackoffMs;
     private final String connectionDb;
+    private final TimeZone timeZone;
 
     public ConnectionConfig(ConfigDef def, Map<?, ?> props) {
         super(def, props);
@@ -143,6 +160,9 @@ public class ConnectionConfig extends AbstractConfig {
         this.connectionAttempts = getInt(CONNECTION_ATTEMPTS);
         this.connectionBackoffMs = getLong(CONNECTION_BACKOFF);
         this.connectionDb = getString(CONNECTION_DB).trim();
+
+        String zone = getString(CONNECTION_TIMEZONE_CONFIG);
+        this.timeZone = TimeZone.getTimeZone(zone);
     }
 
     public String getConnectionUrl() {
@@ -167,5 +187,9 @@ public class ConnectionConfig extends AbstractConfig {
 
     public String getConnectionDb() {
         return connectionDb;
+    }
+
+    public TimeZone getTimeZone() {
+        return timeZone;
     }
 }

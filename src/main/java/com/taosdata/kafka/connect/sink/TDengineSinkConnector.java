@@ -2,7 +2,7 @@ package com.taosdata.kafka.connect.sink;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.taosdata.kafka.connect.util.VersionUtil;
+import com.taosdata.kafka.connect.util.VersionUtils;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.sink.SinkConnector;
@@ -14,11 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author huolibo@qq.com
- * @version v1.0.0
- * @JDK: 1.8
- * @description: tdengine sink connection
- * @date 2021-11-04 14:12
+ * tdengine sink connection
  */
 public class TDengineSinkConnector extends SinkConnector {
     private static final Logger log = LoggerFactory.getLogger(TDengineSinkConnector.class);
@@ -54,7 +50,7 @@ public class TDengineSinkConnector extends SinkConnector {
 
     @Override
     public String version() {
-        return VersionUtil.getVersion();
+        return VersionUtils.getVersion();
     }
 
     /**

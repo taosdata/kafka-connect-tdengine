@@ -8,11 +8,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 
 /**
- * @author huolibo@qq.com
- * @version v1.0.0
- * @JDK: 1.8
- * @description: all sink task need config
- * @date 2021-11-04 14:12
+ * all sink task need config
  */
 public class SinkConfig extends ConnectionConfig {
     private static final Logger log = LoggerFactory.getLogger(SinkConfig.class);
@@ -38,13 +34,6 @@ public class SinkConfig extends ConnectionConfig {
                     + " table, when possible.";
     private static final String BATCH_SIZE_DISPLAY = "Batch Size";
 
-    public static final String DB_TIMEZONE_CONFIG = "db.timezone";
-    public static final String DB_TIMEZONE_DEFAULT = "";
-    private static final String DB_TIMEZONE_CONFIG_DOC =
-            "Name of the JDBC timezone that should be used in the connector when "
-                    + "inserting time-based values. Defaults to UTC.";
-    private static final String DB_TIMEZONE_CONFIG_DISPLAY = "DB Time Zone";
-
     public final static String CHARSET_CONF = "db.charset";
     public final static String CHARSET_DOC = "The character set to use for String key and values.";
 
@@ -60,7 +49,6 @@ public class SinkConfig extends ConnectionConfig {
     private final int maxRetries;
     private final long retryBackoffMs;
     private final int batchSize;
-    private final String timeZone;
     private final String charset;
     private final String timeunit;
     private final String schemalessTypeFormat;
@@ -70,7 +58,6 @@ public class SinkConfig extends ConnectionConfig {
         this.maxRetries = getInt(MAX_RETRIES);
         this.retryBackoffMs = getInt(RETRY_BACKOFF_MS);
         this.batchSize = getInt(BATCH_SIZE);
-        this.timeZone = getString(DB_TIMEZONE_CONFIG);
         this.charset = getString(CHARSET_CONF);
         this.timeunit = getString(DB_TIMEUNIT_CONFIG);
         this.schemalessTypeFormat = getString(DB_SCHEMALESS_CONFIG);
@@ -113,18 +100,6 @@ public class SinkConfig extends ConnectionConfig {
                         3,
                         ConfigDef.Width.SHORT,
                         RETRY_BACKOFF_MS_DISPLAY
-                )
-                .define(
-                        DB_TIMEZONE_CONFIG,
-                        ConfigDef.Type.STRING,
-                        DB_TIMEZONE_DEFAULT,
-                        TimeZoneValidator.INSTANCE,
-                        ConfigDef.Importance.MEDIUM,
-                        DB_TIMEZONE_CONFIG_DOC,
-                        WRITES_GROUP,
-                        4,
-                        ConfigDef.Width.MEDIUM,
-                        DB_TIMEZONE_CONFIG_DISPLAY
                 )
                 .define(
                         DB_TIMEUNIT_CONFIG,
@@ -173,10 +148,6 @@ public class SinkConfig extends ConnectionConfig {
 
     public int getBatchSize() {
         return batchSize;
-    }
-
-    public String getTimeZone() {
-        return timeZone;
     }
 
     public String getCharset() {
