@@ -39,7 +39,6 @@ public class TDengineSinkTask extends SinkTask {
         try {
             reporter = context.errantRecordReporter();
         } catch (NoSuchMethodError | NoClassDefFoundError e) {
-            // Will occur in Connect runtimes earlier than 2.6
             reporter = null;
         }
         // There will be a retry at the end
@@ -73,9 +72,7 @@ public class TDengineSinkTask extends SinkTask {
         int maxBatchSize = config.getBatchSize();
 
         String previousTopic = "";
-        Iterator<SinkRecord> iterator = records.iterator();
-        while (iterator.hasNext()) {
-            SinkRecord record = iterator.next();
+        for (SinkRecord record : records) {
             if (maxBatchSize > 0 && currentGroup.size() == maxBatchSize
                     || !previousTopic.equals(record.topic())) {
 
