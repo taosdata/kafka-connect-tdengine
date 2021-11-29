@@ -29,7 +29,7 @@ public class TDengineSinkTask extends SinkTask {
     private SinkConfig config;
     private Processor writer;
     ErrantRecordReporter reporter;
-    int remainingRetries;
+    private int remainingRetries;
 
     @Override
     public void start(Map<String, String> map) {
@@ -59,7 +59,7 @@ public class TDengineSinkTask extends SinkTask {
                 config.getConnectionAttempts(),
                 config.getConnectionBackoffMs()
         );
-        writer = new CacheProcessor<>(provider, config.getConnectionDb());
+        writer = new CacheProcessor<>(provider);
     }
 
     @Override
@@ -76,21 +76,26 @@ public class TDengineSinkTask extends SinkTask {
             if (maxBatchSize > 0 && currentGroup.size() == maxBatchSize
                     || !previousTopic.equals(record.topic())) {
 
-                bulkWriteBatch(currentGroup);
+                bulkWriteBatch(currentGroup, previousTopic);
                 // next batch insert
                 currentGroup = new ArrayList<>();
                 previousTopic = record.topic();
             }
             currentGroup.add(record);
         }
-        bulkWriteBatch(currentGroup);
+        bulkWriteBatch(currentGroup, previousTopic);
     }
 
-    private void bulkWriteBatch(final List<SinkRecord> batch) {
+    private void bulkWriteBatch(final List<SinkRecord> batch, String topic) {
         if (batch.isEmpty()) {
             return;
         }
 
+        if (config.isSingleDatabase()){
+            writer.setDbName(config.getConnectionDb());
+        }else {
+            writer.setDbName(config.getConnectionDatabasePrefix() + topic);
+        }
         // do some debug log
         int size = batch.size();
         SinkRecord record = batch.get(0);
@@ -99,7 +104,6 @@ public class TDengineSinkTask extends SinkTask {
                         + "database...",
                 size, record.topic(), record.kafkaPartition(), record.kafkaOffset()
         );
-
         String[] strings = batch.stream().map(ConnectRecord::value).map(String::valueOf).toArray(String[]::new);
         try {
             writer.schemalessInsert(strings, SchemalessProtocolType.parse(config.getSchemalessTypeFormat()),

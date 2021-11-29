@@ -31,6 +31,11 @@ public class PoolProcessor implements Processor {
         return null;
     }
 
+    @Override
+    public void setDbName(String dbName) {
+
+    }
+
     public void shutdown() throws Exception {
 
     }

@@ -21,11 +21,16 @@ public class CacheProcessor<T extends ConnectionProvider> implements Processor {
 
     private Connection connection;
 
-    private final String dbName;
+    private String dbName;
 
-    public CacheProcessor(T provider, String dbName) {
+    public CacheProcessor(T provider) {
         this.provider = provider;
+    }
+
+    @Override
+    public void setDbName(String dbName) {
         this.dbName = dbName;
+        this.initDB();
     }
 
     @Override
@@ -33,12 +38,10 @@ public class CacheProcessor<T extends ConnectionProvider> implements Processor {
         try {
             if (this.connection == null) {
                 this.connection = provider.getConnection();
-                initDB();
             } else if (!isConnectionValid(connection)) {
                 log.info("The database connection is invalid. Reconnecting...");
                 close();
                 this.connection = provider.getConnection();
-                initDB();
             }
         } catch (SQLException sqle) {
             throw new ConnectException(sqle);
@@ -48,12 +51,13 @@ public class CacheProcessor<T extends ConnectionProvider> implements Processor {
 
     private void initDB() {
         try {
-            String sql = "create database if not exists " + this.dbName;
+            String sql = "create database if not exists " + this.dbName + " precision 'ns'";
             this.execute(sql);
             sql = "use " + dbName;
             this.execute(sql);
         } catch (SQLException e) {
             log.error("init database error！", e);
+            throw new ConnectException(e);
         }
     }
 

@@ -41,7 +41,8 @@ public class TDengineSourceTask extends SourceTask {
         properties.setProperty(TSDBDriver.PROPERTY_KEY_CHARSET, "UTF-8");
         ConnectionProvider provider = new TSDBConnectionProvider(config.getConnectionUrl(), properties,
                 config.getConnectionAttempts(), config.getConnectionBackoffMs());
-        processor = new CacheProcessor<>(provider, config.getConnectionDb());
+        processor = new CacheProcessor<>(provider);
+        processor.setDbName(config.getConnectionDb());
 
         List<String> tables = config.getTables();
         if (null != tables && tables.size() > 0) {

@@ -35,6 +35,7 @@ public class ConnectionConfig extends AbstractConfig {
     private static final String CONNECTION_PASSWORD_DISPLAY = "JDBC Password";
 
     public static final String CONNECTION_DB = CONNECTION_PREFIX + "database";
+    public static final String CONNECTION_DB_DEFAULT = "";
     private static final String CONNECTION_DB_DOC = "JDBC connection database.";
     private static final String CONNECTION_DB_DISPLAY = "JDBC Database";
 
@@ -122,8 +123,8 @@ public class ConnectionConfig extends AbstractConfig {
                 .define(
                         CONNECTION_DB,
                         ConfigDef.Type.STRING,
-                        ConfigDef.NO_DEFAULT_VALUE,
-                        ConfigDef.Importance.HIGH,
+                        CONNECTION_DB_DEFAULT,
+                        ConfigDef.Importance.MEDIUM,
                         CONNECTION_DB_DOC,
                         CONNECTION_GROUP,
                         ++orderInGroup,
