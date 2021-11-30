@@ -48,7 +48,7 @@ public class SinkConfig extends ConnectionConfig {
 
     public static final String CONNECTION_PREFIX_CONFIG = CONNECTION_PREFIX + "database.prefix";
     public static final String CONNECTION_PREFIX_CONFIG_DEFAULT = "";
-    private static final String CONNECTION_PREFIX_DOC = "when connection.database is not specify, a string for the destination database name" +
+    private static final String CONNECTION_PREFIX_DOC = "when connection.database is not specified, a string for the destination database name" +
             "which may contain '${topic}' as a placeholder for the originating topic name" +
             "for example, kafka_${topic} for the topic 'orders' will map to the database name 'kafka_orders'." +
             "the default value is null, " +
