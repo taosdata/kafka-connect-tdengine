@@ -2,10 +2,6 @@ package com.taosdata.kafka.connect.sink;
 
 import com.taosdata.kafka.connect.config.*;
 import org.apache.kafka.common.config.ConfigDef;
-import org.apache.kafka.common.internals.FatalExitError;
-import org.apache.kafka.common.internals.Topic;
-import org.checkerframework.checker.units.qual.A;
-import org.checkerframework.common.returnsreceiver.qual.This;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +46,7 @@ public class SinkConfig extends ConnectionConfig {
     private static final String DB_SCHEMALESS_CONFIG_DOC = "schemaless format for writing data to TDengine";
     private static final String DB_SCHEMALESS_CONFIG_DISPLAY = "DB Schemaless Format";
 
-    public static final String CONNECTION_PREFIX_CONFIG = CONNECTION_PREFIX + ".database.prefix";
+    public static final String CONNECTION_PREFIX_CONFIG = CONNECTION_PREFIX + "database.prefix";
     public static final String CONNECTION_PREFIX_CONFIG_DEFAULT = "";
     private static final String CONNECTION_PREFIX_DOC = "when connection.database is not specify, a string for the destination database name" +
             "which may contain '${topic}' as a placeholder for the originating topic name" +
@@ -75,7 +71,7 @@ public class SinkConfig extends ConnectionConfig {
         this.charset = getString(CHARSET_CONF);
         this.timeunit = getString(DB_TIMEUNIT_CONFIG);
         this.schemalessTypeFormat = getString(DB_SCHEMALESS_CONFIG);
-        this.connectionDatabasePrefix = getString(CONNECTION_PREFIX_CONFIG);
+        this.connectionDatabasePrefix = getString(CONNECTION_PREFIX_CONFIG).trim();
     }
 
     public static ConfigDef config() {
