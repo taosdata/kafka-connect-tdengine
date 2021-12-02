@@ -1,5 +1,6 @@
 package com.taosdata.kafka.connect.source;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
@@ -31,5 +32,13 @@ public class SourceInsertTest {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    @AfterEach
+    public void after() throws SQLException {
+        Statement statement = conn.createStatement();
+        statement.execute("drop database if exists " + dbname);
+        statement.close();
+        conn.close();
     }
 }

@@ -38,7 +38,7 @@ public class PendingRecord {
     }
 
     /**
-     * @param offsetTimestamp the timestamp to use for the record's offset; may be null
+     * @param offset the timestamp to use for the record's offset; may be null
      * @return a {@link SourceRecord} whose source offset contains the provided timestamp
      */
     public SourceRecord record(TimeStampOffset offset) {

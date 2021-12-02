@@ -23,9 +23,9 @@ public abstract class TableMapper {
     private final Connection connection;
     protected final String topic;
 
-    protected final List<String> columns = Lists.newArrayList();
-    protected final List<String> tags = Lists.newArrayList();
-    protected final Map<String, String> columnType = Maps.newHashMap();
+    protected List<String> columns = Lists.newArrayList();
+    protected List<String> tags = Lists.newArrayList();
+    protected Map<String, String> columnType = Maps.newHashMap();
 
     PreparedStatement preparedStatement;
 
@@ -83,7 +83,7 @@ public abstract class TableMapper {
         return preparedStatement;
     }
 
-    public abstract PendingRecord doExtractRecord(ResultSet resultSet, Map<String, String> partition) ;
+    public abstract PendingRecord doExtractRecord(ResultSet resultSet, Map<String, String> partition);
 
     public void closeStatement() {
         if (preparedStatement != null) {
@@ -95,6 +95,9 @@ public abstract class TableMapper {
             }
         }
         preparedStatement = null;
+        columns = Lists.newArrayList();
+        tags = Lists.newArrayList();
+        columnType = Maps.newHashMap();
     }
 
     // may be use in custom query
