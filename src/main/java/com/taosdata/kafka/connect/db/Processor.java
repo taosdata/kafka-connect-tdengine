@@ -37,6 +37,7 @@ public interface Processor {
 
     /**
      * create database (if not exists) and use this database
+     *
      * @param dbName database name
      */
     void setDbName(String dbName);
