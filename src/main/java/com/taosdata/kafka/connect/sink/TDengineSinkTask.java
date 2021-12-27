@@ -91,9 +91,9 @@ public class TDengineSinkTask extends SinkTask {
             return;
         }
 
-        if (config.isSingleDatabase()){
+        if (config.isSingleDatabase()) {
             writer.setDbName(config.getConnectionDb());
-        }else {
+        } else {
             writer.setDbName(config.getConnectionDatabasePrefix() + topic);
         }
         // do some debug log
