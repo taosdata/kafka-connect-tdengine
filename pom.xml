@@ -114,6 +114,7 @@
                             <tasks>
                                 <copy file="${project.build.outputDirectory}/version.txt"
                                       toFile="version.txt" overwrite="true" />
+                                <delete file="version.txt" />
                             </tasks>
                         </configuration>
                         <goals>
