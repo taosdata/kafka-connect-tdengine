@@ -88,19 +88,19 @@ This example assumes you are running Confluent version 7.1.1 locally on the defa
    taos> show stables;
    name                 |      created_time       | columns |  tags  |   tables    |
    =================================================================================================
-   st                                  | 2021-11-09 14: 48: 13.164 |       5 |      3 |           1 |
+   st                                  | 2021-11-09 14:48:13.164 |       5 |      3 |           1 |
    Query OK, 1 row(s) in set (0.001102s)
 
    taos> show tables;
    table_name              |      created_time       | columns |             stable_name             |          uid          |     tid     |    vgId     |
    ====================================================================================================================================================================
-   t_1931d87b0c76e62aa8c5dfa2287dfddb  | 2021-11-09 14: 48: 13.169 |       5 | st                                  |       844424946914325 |           1 |           3 |
+   t_1931d87b0c76e62aa8c5dfa2287dfddb  | 2021-11-09 14:48:13.169 |       5 | st                                  |       844424946914325 |           1 |           3 |
    Query OK, 1 row(s) in set (0.003321s)
 
    taos> select * from t_1931d87b0c76e62aa8c5dfa2287dfddb;
    _ts           |          c1           |            c3            |  c2   |            c4             |
    =================================================================================================================
-   2021-07-11 20: 33: 53.639 |                     3 | passit                   | false |               4.000000000 |
+   2021-07-11 20:33:53.639 |                     3 | passit                   | false |               4.000000000 |
    Query OK, 1 row(s) in set (0.003365s)
    ```
 
@@ -129,7 +129,7 @@ this configuration is used typically with [distributed workers](https://docs.con
 Run the connector with this configuration
 
 ```text
-curl -X POST -d @tdengine-sink-connector.json http://localhost: 8083/connectors -H "Content-Type:  application/json"
+curl -X POST -d @tdengine-sink-connector.json http://localhost:8083/connectors -H "Content-Type:application/json"
 ```
 
 ## Configuration
