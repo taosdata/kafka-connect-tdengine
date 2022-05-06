@@ -176,7 +176,7 @@ TDengine JDBC connection user.
 
 ### `connection.password`
 
-TDengine JDBC conneciton password.
+TDengine JDBC connection password.
 
 - Type: string
 - Importance: high
