@@ -44,14 +44,14 @@ This example assumes you are running Confluent version 7.1.1 locally on the defa
    confluent local services start
    ```
 
-2. create a configuration file for the connector. This configuration is used typically with standalone workers. This file is included with the connector in `./etc/sink-quickstart.properties`, and contains the following settings:
+2. create a configuration file for the connector. This configuration is used typically with standalone workers. This file is included with the connector in `./sink-quickstart.properties`, and contains the following settings:
 
    ```properties
    name=tdengine-sink
    connector.class=com.taosdata.kafka.connect.sink.TDengineSinkConnector
    tasks.max=1
    topics=schemaless
-   connection.url=jdbc:TAOS://127.0.0.1: 6030
+   connection.url=jdbc:TAOS://127.0.0.1:6030
    connection.user=root
    connection.password=taosdata
    connection.database=sink
@@ -65,42 +65,48 @@ This example assumes you are running Confluent version 7.1.1 locally on the defa
 3. Run the connector with this configuration:
 
    ```shell
-   confluent local services connect connector load TDengineSinkConnector --config etc/sink-quickstart.properties
+   confluent local services connect connector load TDengineSinkConnector --config ./sink-quickstart.properties
    ```
 
 4. create a record in the schemaless topic:  
-   `bin/kafka-console-producer --broker-list localhost: 9092 --topic schemaless`  
+   ```
+   bin/kafka-console-producer --broker-list localhost: 9092 --topic schemaless
+   ```
    The console producer is waiting for input, copy and paste the following record into the terminal:  
-   `st,t1=3i64,t2=4f64,t3="t3" c1=3i64,c3=L"passit",c2=false,c4=4f64 1626006833639000000`  
+   ```
+   st,t1=3i64,t2=4f64,t3="t3" c1=3i64,c3=L"passit",c2=false,c4=4f64 1626006833639000000
+   ```
    or use：  
-   `echo "st,t1=3i64,t2=4f64,t3=\"t3\" c1=3i64,c3=L\"passit\",c2=false,c4=4f64 1626006833639000000" | confluent local services kafka produce schemaless`
+   ```
+   echo "st,t1=3i64,t2=4f64,t3=\"t3\" c1=3i64,c3=L\"passit\",c2=false,c4=4f64 1626006833639000000" | confluent local services kafka produce schemaless
+   ```
 
 5. open the taos shell
-   ```text
+   ```
    taos
    ```
 6. run the following query to verify the records:
 
-   ```text
+   ```
    taos> use sink;
    Query OK, 0 of 0 row(s) in database (0.000386s)
 
    taos> show stables;
    name                 |      created_time       | columns |  tags  |   tables    |
    =================================================================================================
-   st                                  | 2021-11-09 14: 48: 13.164 |       5 |      3 |           1 |
+   st                                  | 2021-11-09 14:48:13.164 |       5 |      3 |           1 |
    Query OK, 1 row(s) in set (0.001102s)
 
    taos> show tables;
    table_name              |      created_time       | columns |             stable_name             |          uid          |     tid     |    vgId     |
    ====================================================================================================================================================================
-   t_1931d87b0c76e62aa8c5dfa2287dfddb  | 2021-11-09 14: 48: 13.169 |       5 | st                                  |       844424946914325 |           1 |           3 |
+   t_1931d87b0c76e62aa8c5dfa2287dfddb  | 2021-11-09 14:48:13.169 |       5 | st                                  |       844424946914325 |           1 |           3 |
    Query OK, 1 row(s) in set (0.003321s)
 
    taos> select * from t_1931d87b0c76e62aa8c5dfa2287dfddb;
    _ts           |          c1           |            c3            |  c2   |            c4             |
    =================================================================================================================
-   2021-07-11 20: 33: 53.639 |                     3 | passit                   | false |               4.000000000 |
+   2021-07-11 20:33:53.639 |                     3 | passit                   | false |               4.000000000 |
    Query OK, 1 row(s) in set (0.003365s)
    ```
 
@@ -115,7 +121,7 @@ this configuration is used typically with [distributed workers](https://docs.con
     "connector.class": "com.taosdata.kafka.connect.sink.TDengineSinkConnector",
     "tasks.max": "1",
     "topics": "schemaless",
-    "connection.url": "jdbc:TAOS://127.0.0.1: 6030",
+    "connection.url": "jdbc:TAOS://127.0.0.1:6030",
     "connection.user": "root",
     "connection.password": "taosdata",
     "connection.database": "sink",
@@ -128,8 +134,8 @@ this configuration is used typically with [distributed workers](https://docs.con
 
 Run the connector with this configuration
 
-```text
-curl -X POST -d @tdengine-sink-connector.json http://localhost: 8083/connectors -H "Content-Type:  application/json"
+```
+curl -X POST -d @tdengine-sink-connector.json http://localhost:8083/connectors -H "Content-Type:application/json"
 ```
 
 ## Configuration
@@ -160,7 +166,7 @@ kafka topics are the categories used to organize messages. Multiple topics are s
 
 ### `connection.url`
 
-TDengine JDBC connection URL. For example: `connection.url=jdbc:TAOS://127.0.0.1: 6030`
+TDengine JDBC connection URL. For example: `connection.url=jdbc:TAOS://127.0.0.1:6030`
 
 - Type: string
 - importance: high
