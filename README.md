@@ -36,7 +36,7 @@ See the [Confluent quickstart](https: //docs.confluent.io/platform/current/quick
 ## Quick Start
 
 In this quick start, you copy data from a single Kafka topic to a database on a local tdengine database.
-This example assumes you are running Kafka and Schema Registry locally on the default ports. It also assumes your have TDengine installed and running.
+This example assumes you are running Confluent version 7.1.1 locally on the default ports. It also assumes your have TDengine installed and running.
 
 1. Start the Confluent Platform using the Confluent CLI command below.
 
