@@ -51,7 +51,7 @@ This example assumes you are running Confluent version 7.1.1 locally on the defa
    connector.class=com.taosdata.kafka.connect.sink.TDengineSinkConnector
    tasks.max=1
    topics=schemaless
-   connection.url=jdbc:TAOS://127.0.0.1: 6030
+   connection.url=jdbc:TAOS://127.0.0.1:6030
    connection.user=root
    connection.password=taosdata
    connection.database=sink
@@ -115,7 +115,7 @@ this configuration is used typically with [distributed workers](https://docs.con
     "connector.class": "com.taosdata.kafka.connect.sink.TDengineSinkConnector",
     "tasks.max": "1",
     "topics": "schemaless",
-    "connection.url": "jdbc:TAOS://127.0.0.1: 6030",
+    "connection.url": "jdbc:TAOS://127.0.0.1:6030",
     "connection.user": "root",
     "connection.password": "taosdata",
     "connection.database": "sink",
@@ -160,7 +160,7 @@ kafka topics are the categories used to organize messages. Multiple topics are s
 
 ### `connection.url`
 
-TDengine JDBC connection URL. For example: `connection.url=jdbc:TAOS://127.0.0.1: 6030`
+TDengine JDBC connection URL. For example: `connection.url=jdbc:TAOS://127.0.0.1:6030`
 
 - Type: string
 - importance: high
