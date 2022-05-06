@@ -1,10 +1,10 @@
 # TDengine Connector (Source and Sink) for Confluent Platform
 
-[TDengine](https: //www.taosdata.com/) is a highly efficient platform to store, query, and analyze time-series data. It is specially designed and optimized for IoT, Internet of Vehicles, Industrial IoT, IT Infrastructure and Application Monitoring, etc. It works like a relational database, such as MySQL.
+[TDengine](https://www.taosdata.com/) is a highly efficient platform to store, query, and analyze time-series data. It is specially designed and optimized for IoT, Internet of Vehicles, Industrial IoT, IT Infrastructure and Application Monitoring, etc. It works like a relational database, such as MySQL.
 
-[Apache Kafka](https: //kafka.apache.org/) is an open-source distributed event streaming platform used by thousands of companies for high-performance data pipelines, streaming analytics, data integration, and mission-critical applications.
+[Apache Kafka](https://kafka.apache.org/) is an open-source distributed event streaming platform used by thousands of companies for high-performance data pipelines, streaming analytics, data integration, and mission-critical applications.
 
-kafka-connect-tdengine is a [Kafka Connector](http: //kafka.apache.org/documentation.html#connect) for real-time data synchronization from Kafka to TDengine
+kafka-connect-tdengine is a [Kafka Connector](http://kafka.apache.org/documentation.html#connect) for real-time data synchronization from Kafka to TDengine
 
 ## Features
 
@@ -18,19 +18,19 @@ The connector supports running one or more tasks. You can specify the number of 
 
 ### Multiple Format Support
 
-This connector supports multiple input formats, such as [line](https: //docs.influxdata.com/influxdb/v2.1/reference/syntax/line-protocol/),[telnet](http: //opentsdb.net/docs/build/html/api_telnet/put.html),[json](http: //opentsdb.net/docs/build/html/api_http/put.html). Users can explicitly define mappings for types in indices. When a mapping is not explicitly defined, TDengine can determine field types from data, however, some types such as timestamp and decimal, may not be correctly inferred. To ensure that the types are correctly inferred, the connector provides json format to infer a mapping from the schemas of Kafka messages.
+This connector supports multiple input formats, such as [line](https://docs.influxdata.com/influxdb/v2.1/reference/syntax/line-protocol/),[telnet](http://opentsdb.net/docs/build/html/api_telnet/put.html),[json](http://opentsdb.net/docs/build/html/api_http/put.html). Users can explicitly define mappings for types in indices. When a mapping is not explicitly defined, TDengine can determine field types from data, however, some types such as timestamp and decimal, may not be correctly inferred. To ensure that the types are correctly inferred, the connector provides json format to infer a mapping from the schemas of Kafka messages.
 
 ## Build from Source
 
 To build a development version you'll need a recent version of Kafka as well as a set of upstream Confluent projects, which you'll have to build from their appropriate snapshot branch.
-See the [Confluent quickstart](https: //docs.confluent.io/platform/current/quickstart/ce-docker-quickstart.html) for guidance on this process.
+See the [Confluent quickstart](https://docs.confluent.io/platform/current/quickstart/ce-docker-quickstart.html) for guidance on this process.
 
 1. Clone this Github repository:  
-   `git clone git@github.com: taosdata/kafka-connect-tdengine.git`
+   `git clone git@github.com:taosdata/kafka-connect-tdengine.git`
 2. You can build kafka-connect-tdengine with `Maven` using the standard lifecycle phases.  
    `mvn clean package`
 3. A `.zip` file will be produced in the `/target/components/packages/` folder after the process has run.
-4. Install the `.zip` into a directory specified in the `plugin.path` of your connect worker's configuration properties file. See the [Confluent instructions](https: //docs.confluent.io/home/connect/install.html#install-connector-manually) for further information on this step.
+4. Install the `.zip` into a directory specified in the `plugin.path` of your connect worker's configuration properties file. See the [Confluent instructions](https://docs.confluent.io/home/connect/install.html#install-connector-manually) for further information on this step.
 5. [Configure](#configuration) the connector.
 
 ## Quick Start
@@ -51,7 +51,7 @@ This example assumes you are running Confluent version 7.1.1 locally on the defa
    connector.class=com.taosdata.kafka.connect.sink.TDengineSinkConnector
    tasks.max=1
    topics=schemaless
-   connection.url=jdbc: TAOS: //127.0.0.1: 6030
+   connection.url=jdbc:TAOS://127.0.0.1: 6030
    connection.user=root
    connection.password=taosdata
    connection.database=sink
@@ -106,7 +106,7 @@ This example assumes you are running Confluent version 7.1.1 locally on the defa
 
 ## REST-based example
 
-this configuration is used typically with [distributed workers](https: //docs.confluent.io/platform/current/connect/concepts.html#distributed-workers). Write the following JSON to `tdengine-sink-connector.json`, configure all of the required values, and use the command below to post the configuration to one of the distributed connect worker.
+this configuration is used typically with [distributed workers](https://docs.confluent.io/platform/current/connect/concepts.html#distributed-workers). Write the following JSON to `tdengine-sink-connector.json`, configure all of the required values, and use the command below to post the configuration to one of the distributed connect worker.
 
 ```json
 {
@@ -115,7 +115,7 @@ this configuration is used typically with [distributed workers](https: //docs.co
     "connector.class": "com.taosdata.kafka.connect.sink.TDengineSinkConnector",
     "tasks.max": "1",
     "topics": "schemaless",
-    "connection.url": "jdbc: TAOS: //127.0.0.1: 6030",
+    "connection.url": "jdbc:TAOS://127.0.0.1: 6030",
     "connection.user": "root",
     "connection.password": "taosdata",
     "connection.database": "sink",
@@ -129,7 +129,7 @@ this configuration is used typically with [distributed workers](https: //docs.co
 Run the connector with this configuration
 
 ```text
-curl -X POST -d @tdengine-sink-connector.json http: //localhost: 8083/connectors -H "Content-Type:  application/json"
+curl -X POST -d @tdengine-sink-connector.json http://localhost: 8083/connectors -H "Content-Type:  application/json"
 ```
 
 ## Configuration
@@ -160,7 +160,7 @@ kafka topics are the categories used to organize messages. Multiple topics are s
 
 ### `connection.url`
 
-TDengine JDBC connection URL. For example: `connection.url=jdbc: TAOS: //127.0.0.1: 6030`
+TDengine JDBC connection URL. For example: `connection.url=jdbc:TAOS://127.0.0.1: 6030`
 
 - Type: string
 - importance: high
@@ -248,8 +248,8 @@ the format to write data to tdengine, one of line,telnet,json
 
 ## Contribute
 
-- Source Code: https: //github.com/taosdata/kafka-connect-tdengine
-- Issue Tracker: https: //github.com/taosdata/kafka-connect-tdengine/issues
+- Source Code: https://github.com/taosdata/kafka-connect-tdengine
+- Issue Tracker: https://github.com/taosdata/kafka-connect-tdengine/issues
 
 ## License
 
