@@ -44,7 +44,7 @@ This example assumes you are running Confluent version 7.1.1 locally on the defa
    confluent local services start
    ```
 
-2. create a configuration file for the connector. This configuration is used typically with standalone workers. This file is included with the connector in `./sink-quickstart.properties`, and contains the following settings:
+2. create a configuration file for the connector. This configuration is used typically with standalone workers. This file is included with the connector in `etc/sink-quickstart.properties`, and contains the following settings:
 
    ```properties
    name=tdengine-sink
@@ -65,12 +65,12 @@ This example assumes you are running Confluent version 7.1.1 locally on the defa
 3. Run the connector with this configuration:
 
    ```shell
-   confluent local services connect connector load TDengineSinkConnector --config ./sink-quickstart.properties
+   confluent local services connect connector load TDengineSinkConnector --config sink-quickstart.properties
    ```
 
 4. create a record in the schemaless topic:  
    ```
-   bin/kafka-console-producer --broker-list localhost: 9092 --topic schemaless
+   bin/kafka-console-producer --broker-list localhost:9092 --topic schemaless
    ```
    The console producer is waiting for input, copy and paste the following record into the terminal:  
    ```
