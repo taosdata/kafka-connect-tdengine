@@ -12,7 +12,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Map;
 
-import static com.taosdata.kafka.connect.source.SourceConstants.OUT_FORMAT_LINE;
+import static com.taosdata.kafka.connect.source.SourceConstants.OUT_FORMAT_JSON;
 
 public class TableExecutor {
     private static final Logger log = LoggerFactory.getLogger(TableExecutor.class);
@@ -46,10 +46,10 @@ public class TableExecutor {
 
         this.exhaustedResultRecord = false;
         this.nextRecord = null;
-        if (OUT_FORMAT_LINE.equals(format)) {
-            mapper = new LineMapper(topic, tableName, batchMaxRows, processor);
-        }else {
+        if (OUT_FORMAT_JSON.equals(format)) {
             mapper = new JsonMapper(topic, tableName, batchMaxRows, processor);
+        }else {
+            mapper = new LineMapper(topic, tableName, batchMaxRows, processor);
         }
     }
 
