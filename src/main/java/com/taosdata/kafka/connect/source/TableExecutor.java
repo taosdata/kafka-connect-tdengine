@@ -12,7 +12,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Map;
 
-import static com.taosdata.kafka.connect.source.SourceConstants.OUT_FORMAT_TELNET;
+import static com.taosdata.kafka.connect.source.SourceConstants.OUT_FORMAT_LINE;
 
 public class TableExecutor {
     private static final Logger log = LoggerFactory.getLogger(TableExecutor.class);
@@ -46,8 +46,8 @@ public class TableExecutor {
 
         this.exhaustedResultRecord = false;
         this.nextRecord = null;
-        if (OUT_FORMAT_TELNET.equals(format)) {
-            mapper = new TelnetMapper(topic, tableName, batchMaxRows, processor);
+        if (OUT_FORMAT_LINE.equals(format)) {
+            mapper = new LineMapper(topic, tableName, batchMaxRows, processor);
         }else {
             mapper = new JsonMapper(topic, tableName, batchMaxRows, processor);
         }

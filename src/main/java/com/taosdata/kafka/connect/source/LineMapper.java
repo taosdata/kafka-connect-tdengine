@@ -12,10 +12,10 @@ import java.util.Map;
 /**
  *
  */
-public class TelnetMapper extends TableMapper {
-    private static final Logger log = LoggerFactory.getLogger(TelnetMapper.class);
+public class LineMapper extends TableMapper {
+    private static final Logger log = LoggerFactory.getLogger(LineMapper.class);
 
-    public TelnetMapper(String topic, String tableName, int batchMaxRows, Processor processor) throws SQLException {
+    public LineMapper(String topic, String tableName, int batchMaxRows, Processor processor) throws SQLException {
         super(topic, tableName, batchMaxRows, processor);
     }
 

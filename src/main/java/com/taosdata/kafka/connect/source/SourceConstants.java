@@ -18,5 +18,5 @@ public class SourceConstants {
 
     public static final String OUT_FORMAT_JSON = "json";
 
-    public static final String OUT_FORMAT_TELNET = "telnet";
+    public static final String OUT_FORMAT_LINE = "line";
 }
