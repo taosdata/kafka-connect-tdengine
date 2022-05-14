@@ -44,11 +44,8 @@ public abstract class TableMapper {
 
         ResultSet resultSet = null;
         try (Statement statement = connection.createStatement()) {
-            statement.execute(SQLUtils.describeTableSql(tableName));
-            resultSet = statement.getResultSet();
+            resultSet = statement.executeQuery(SQLUtils.describeTableSql(tableName));
             resultSet.next();
-            String timestampColumn = resultSet.getString(1);
-            columnType.put(timestampColumn, resultSet.getString(2));
             while (resultSet.next()) {
                 String name = resultSet.getString(1);
                 columnType.put(name, resultSet.getString(2));
@@ -58,14 +55,8 @@ public abstract class TableMapper {
                     columns.add(name);
                 }
             }
-            StringBuilder queryString = new StringBuilder();
-            queryString.append("select *");
-            if (!tags.isEmpty()) {
-                queryString.append(",").append(String.join(",", tags));
-            }
-            queryString.append(" from ").append(tableName);
-            queryString.append(String.format(" where %s > ? and %s <= ?", timestampColumn, timestampColumn));
-            preparedStatement = connection.prepareStatement(queryString.toString());
+            preparedStatement = connection.prepareStatement(
+                    "select * from `" + tableName + "` where _c0 > ? and _c0 <= ? ");
             if (batchMaxRows > 0) {
                 preparedStatement.setFetchSize(batchMaxRows);
             }

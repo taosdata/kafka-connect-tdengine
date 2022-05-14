@@ -2,6 +2,7 @@ package com.taosdata.kafka.connect.source;
 
 import com.google.common.collect.Sets;
 import com.taosdata.jdbc.TSDBDriver;
+import com.taosdata.jdbc.utils.StringUtils;
 import com.taosdata.kafka.connect.db.ConnectionProvider;
 import com.taosdata.kafka.connect.db.TSDBConnectionProvider;
 import com.taosdata.kafka.connect.util.SQLUtils;
@@ -90,10 +91,15 @@ public class MonitorThread extends Thread {
         Set<String> set = new HashSet<>();
         try (Statement statement = connection.createStatement()) {
             statement.execute(SQLUtils.useTableSql(config.getConnectionDb()));
-            statement.execute(SQLUtils.showTableSql());
-            ResultSet resultSet = statement.getResultSet();
+            ResultSet resultSet = statement.executeQuery(SQLUtils.showSTableSql());
             while (resultSet.next()) {
                 set.add(resultSet.getString(1));
+            }
+            resultSet = statement.executeQuery(SQLUtils.showTableSql());
+            while (resultSet.next()) {
+                if (StringUtils.isEmpty(resultSet.getString("stable_name"))) {
+                    set.add(resultSet.getString(1));
+                }
             }
         } catch (SQLException e) {
             log.error("error occur while show Tables in db {}", config.getConnectionDb(), e);

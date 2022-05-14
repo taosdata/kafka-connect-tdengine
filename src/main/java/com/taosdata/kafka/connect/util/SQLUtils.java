@@ -11,6 +11,10 @@ public class SQLUtils {
         return "show tables";
     }
 
+    public static String showSTableSql() {
+        return "show stables";
+    }
+
     public static String useTableSql(String dbname) {
         return "use " + dbname;
     }

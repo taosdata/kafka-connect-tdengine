@@ -74,10 +74,10 @@ public class TDengineSourceTask extends SourceTask {
 
         // If not in the middle of an update, wait for next update time
         if (null != executor.getLastCommittedOffset()) {
-            final long nextUpdate = executor.getLastCommittedOffset().getTime()
+            long nextUpdate = executor.getLastCommittedOffset().getTime()
                     + config.getPollInterval();
-            final long now = System.currentTimeMillis();
-            final long sleepMs = Math.min(nextUpdate - now, 1000);
+            long now = System.currentTimeMillis();
+            long sleepMs = Math.min(nextUpdate - now, 1000);
             if (sleepMs > 0) {
                 log.trace("Waiting {} ms to poll {} next", nextUpdate - now, executor.getTableName());
                 TimeUnit.MILLISECONDS.sleep(sleepMs);
