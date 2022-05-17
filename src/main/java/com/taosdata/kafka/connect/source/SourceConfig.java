@@ -54,7 +54,7 @@ public class SourceConfig extends ConnectionConfig {
     private static final String TABLES_DOC = "List of tables for this task to watch for changes.";
 
     private static final String OUT_FORMAT_CONFIG = "out.format";
-    private static final String OUT_FORMAT_CONFIG_DEFAULT = "json";
+    private static final String OUT_FORMAT_CONFIG_DEFAULT = "line";
     private static final String OUT_FORMAT_CONFIG_DOC = "out format for writing data to kafka";
     private static final String OUT_FORMAT_CONFIG_DISPLAY = "out format may be one of json or telnet";
 

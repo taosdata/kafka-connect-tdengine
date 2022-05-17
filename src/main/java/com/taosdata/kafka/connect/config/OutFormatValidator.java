@@ -1,5 +1,6 @@
 package com.taosdata.kafka.connect.config;
 
+import com.taosdata.kafka.connect.enums.OutputFormatEnum;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
 import org.slf4j.Logger;
@@ -19,9 +20,9 @@ public class OutFormatValidator implements ConfigDef.Validator {
 
     @Override
     public void ensureValid(String name, Object value) {
-        Set<String> set = Arrays.stream(new String[]{"json", "telnet"}).collect(Collectors.toSet());
-        if (!set.contains(String.valueOf(value).toLowerCase())){
-            throw new ConfigException(name, value, "outFormat config must one of telnet/json");
+        if (!OutputFormatEnum.isValid(String.valueOf(value))) {
+            throw new ConfigException(name, value,
+                    "outFormat config must one of telnet/json");
         }
     }
 }
