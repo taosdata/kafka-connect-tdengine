@@ -6,7 +6,7 @@
 
     <groupId>com.taosdata</groupId>
     <artifactId>kafka-connect-tdengine</artifactId>
-    <version>0.1.0</version>
+    <version>1.0.0</version>
     <packaging>jar</packaging>
     <name>kafka-connect-tdengine</name>
     <description>Kafka Connect Source and Sink Connectors for TDengine</description>
@@ -114,7 +114,7 @@
                             <tasks>
                                 <copy file="${project.build.outputDirectory}/version.txt"
                                       toFile="version.txt" overwrite="true" />
-                                <delete file="version.txt" />
+<!--                                <delete file="version.txt" />-->
                             </tasks>
                         </configuration>
                         <goals>
@@ -136,12 +136,10 @@
                         <configuration>
                             <title>Kafka Connect TDengine</title>
                             <description>
-                                TDengine is a highly efficient platform to store, query, and analyze time-series data.
-                                It is specially designed and optimized for IoT, Internet of Vehicles, Industrial IoT, IT
-                                Infrastructure and Application Monitoring, etc.
-                                It works like a relational database, such as MySQL, but you are strongly encouraged to
-                                read through the following documentation before you experience it,
-                                especially the Data Modeling sections.
+                                TDengine is a high-performance, scalable time-series database with SQL support.
+                                Its code, including its cluster feature is open source under GNU AGPL v3.0.
+                                Besides the database engine, it provides caching, stream processing, data subscription
+                                and other functionalities to reduce the complexity and cost of development and operation.
                             </description>
                             <logo>logos/TDengineLogo.png</logo>
 
@@ -165,7 +163,10 @@
 
                             <tags>
                                 <tag>Time Series</tag>
+                                <tag>TDengine</tag>
+                                <tag>taosdata</tag>
                                 <tag>Database</tag>
+                                <tag>sql</tag>
                             </tags>
 
                             <supportProviderName>taosdata, Inc.</supportProviderName>
