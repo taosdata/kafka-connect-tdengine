@@ -214,7 +214,7 @@ Backoff time in milliseconds between connection attempts.
 
 ### `connection.database.prefix`
 
-when connection.database is not specify, a string for the destination database name. which may contain '${topic}' as a placeholder for the originating topic name. for example, 'kafka_${topic}' for the topic 'orders' will map to the database name 'kafka_orders'. the default value is null, this means the topic will be mapped to the new database which will have same name as the topic
+when connection.database is not specify, a string for the destination database name. which may contain \${topic} as a placeholder for the originating topic name. for example, 'kafka_\${topic}' for the topic 'orders' will map to the database name 'kafka_orders'. the default value is null, this means the topic will be mapped to the new database which will have same name as the topic
 
 - Type: String
 - Importance: medium
