@@ -246,11 +246,19 @@ The time in milliseconds to wait following an error before a retry attempt is ma
 
 ### `db.schemaless`
 
-the format to write data to tdengine, one of line,telnet,json
+the format to write data to tdengine, one of line,telnet,json.
 
 - Type: string
 - Importance: high
 - Default: null
+
+### `data.precision`
+
+the precision of the schemaless data, one of ms, us, ns. this is valid only when `db.schemaless` is line format.
+
+- Type: string
+- Importance: medium
+- Default: ns
 
 ## Contribute
 

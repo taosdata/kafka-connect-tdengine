@@ -23,8 +23,8 @@
 
     <developers>
         <developer>
-            <id>support</id>
-            <email>support@taosdata.com</email>
+            <id>huolibo</id>
+            <email>lbhuo@taosdata.com</email>
             <organization>taosdata</organization>
             <organizationUrl>https://www.taosdata.com</organizationUrl>
             <roles>
