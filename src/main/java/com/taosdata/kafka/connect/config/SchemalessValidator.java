@@ -16,7 +16,7 @@ public class SchemalessValidator implements ConfigDef.Validator{
     @Override
     public void ensureValid(String name, Object value) {
         if (SchemalessProtocolType.UNKNOWN == SchemalessProtocolType.parse(String.valueOf(value))){
-            throw new ConfigException(name, value, "schemaless config must one of LINE/TELNET/JSON");
+            throw new ConfigException(name, value, "schemaless config must be one of (line, telnet, json)");
         }
     }
 }

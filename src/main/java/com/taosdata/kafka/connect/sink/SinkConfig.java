@@ -1,6 +1,9 @@
 package com.taosdata.kafka.connect.sink;
 
+import com.taosdata.jdbc.enums.SchemalessProtocolType;
+import com.taosdata.jdbc.enums.SchemalessTimestampType;
 import com.taosdata.kafka.connect.config.*;
+import com.taosdata.kafka.connect.enums.DataPrecision;
 import org.apache.kafka.common.config.ConfigDef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +49,12 @@ public class SinkConfig extends ConnectionConfig {
     private static final String DB_SCHEMALESS_CONFIG_DOC = "schemaless format for writing data to TDengine";
     private static final String DB_SCHEMALESS_CONFIG_DISPLAY = "DB Schemaless Format";
 
+    public static final String DATA_PRECISION = "data.precision";
+    public static final String DATA_PRECISION_DEFAULT = "";
+    private static final String DATA_PRECISION_DOC =
+            "the precision of the schemaless data, this is valid only in line format";
+    private static final String DATA_PRECISION_DISPLAY = "Data Precision";
+
     public static final String CONNECTION_PREFIX_CONFIG = CONNECTION_PREFIX + "database.prefix";
     public static final String CONNECTION_PREFIX_CONFIG_DEFAULT = "";
     private static final String CONNECTION_PREFIX_DOC = "when connection.database is not specified, a string for the destination database name" +
@@ -55,12 +64,13 @@ public class SinkConfig extends ConnectionConfig {
             "this means the topic will be mapped to the new database which will have same name as the topic";
     private static final String CONNECTION_PREFIX_DISPLAY = "JDBC sink destination Database prefix";
 
+    private final SchemalessTimestampType timestampType;
     private final int maxRetries;
     private final long retryBackoffMs;
     private final int batchSize;
     private final String charset;
     private final String timeunit;
-    private final String schemalessTypeFormat;
+    private final SchemalessProtocolType schemalessTypeFormat;
     private final String connectionDatabasePrefix;
 
     public SinkConfig(Map<?, ?> originals) {
@@ -70,13 +80,30 @@ public class SinkConfig extends ConnectionConfig {
         this.batchSize = getInt(BATCH_SIZE);
         this.charset = getString(CHARSET_CONF);
         this.timeunit = getString(DB_TIMEUNIT_CONFIG);
-        this.schemalessTypeFormat = getString(DB_SCHEMALESS_CONFIG);
+        this.schemalessTypeFormat = SchemalessProtocolType.parse(getString(DB_SCHEMALESS_CONFIG).trim());
+        if (schemalessTypeFormat == SchemalessProtocolType.LINE) {
+            this.timestampType = DataPrecision.getTimestampType(getString(DATA_PRECISION).trim());
+        } else {
+            this.timestampType = SchemalessTimestampType.NOT_CONFIGURED;
+        }
         this.connectionDatabasePrefix = getString(CONNECTION_PREFIX_CONFIG).trim();
     }
 
     public static ConfigDef config() {
         int orderInGroup = 0;
         return ConnectionConfig.config()
+                .define(
+                        DATA_PRECISION,
+                        ConfigDef.Type.STRING,
+                        DATA_PRECISION_DEFAULT,
+                        PrecisionValidator.INSTANCE,
+                        ConfigDef.Importance.MEDIUM,
+                        DATA_PRECISION_DOC,
+                        WRITES_GROUP,
+                        ++orderInGroup,
+                        ConfigDef.Width.SHORT,
+                        DATA_PRECISION_DISPLAY
+                )
                 .define(
                         BATCH_SIZE,
                         ConfigDef.Type.INT,
@@ -159,6 +186,10 @@ public class SinkConfig extends ConnectionConfig {
                 ;
     }
 
+    public SchemalessTimestampType getTimestampType() {
+        return timestampType;
+    }
+
     public int getMaxRetries() {
         return maxRetries;
     }
@@ -179,7 +210,7 @@ public class SinkConfig extends ConnectionConfig {
         return timeunit;
     }
 
-    public String getSchemalessTypeFormat() {
+    public SchemalessProtocolType getSchemalessTypeFormat() {
         return schemalessTypeFormat;
     }
 

@@ -21,7 +21,7 @@ import java.sql.SQLException;
 import java.util.*;
 
 /**
- * tdengine sink task
+ * TDengine sink task
  */
 public class TDengineSinkTask extends SinkTask {
     private static final Logger log = LoggerFactory.getLogger(TDengineSinkTask.class);
@@ -106,8 +106,7 @@ public class TDengineSinkTask extends SinkTask {
         );
         String[] strings = batch.stream().map(ConnectRecord::value).map(String::valueOf).toArray(String[]::new);
         try {
-            writer.schemalessInsert(strings, SchemalessProtocolType.parse(config.getSchemalessTypeFormat()),
-                    SchemalessTimestampType.NOT_CONFIGURED);
+            writer.schemalessInsert(strings, config.getSchemalessTypeFormat(), config.getTimestampType());
         } catch (SQLException sqle) {
             log.warn(
                     "Write of {} records failed, remainingRetries={}",
@@ -150,7 +149,7 @@ public class TDengineSinkTask extends SinkTask {
         for (SinkRecord record : records) {
             try {
                 writer.schemalessInsert(new String[]{String.valueOf(record.value())},
-                        SchemalessProtocolType.parse(config.getSchemalessTypeFormat()), SchemalessTimestampType.NOT_CONFIGURED);
+                        config.getSchemalessTypeFormat(), SchemalessTimestampType.NOT_CONFIGURED);
             } catch (SQLException sqle) {
                 SQLException sqlAllMessagesException = getAllMessagesException(sqle);
                 reporter.report(record, sqlAllMessagesException);

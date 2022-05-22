@@ -71,7 +71,7 @@ public class SourceConfig extends ConnectionConfig {
         this.pollInterval = this.getInt(POLL_INTERVAL_MS_CONFIG);
 //        this.monitorTables = this.getBoolean(MONITOR_TABLES_CONFIG);
         this.topicPrefix = this.getString(TOPIC_PREFIX_CONFIG).trim();
-        String time = this.getString(TIMESTAMP_INITIAL_CONFIG);
+        String time = this.getString(TIMESTAMP_INITIAL_CONFIG).trim();
         if (null != time && time.trim().length() > 0) {
             DateTimeFormatter df = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             this.timestampInitial = Timestamp.valueOf(LocalDateTime.parse(time, df));
