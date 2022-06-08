@@ -40,11 +40,6 @@ public class SinkConfig extends ConnectionConfig {
     public final static String CHARSET_CONF = "db.charset";
     public final static String CHARSET_DOC = "The character set to use for String key and values.";
 
-    private static final String DB_TIMEUNIT_CONFIG = "db.timeunit";
-    public static final String DB_TIMEUNIT_DEFAULT = "milliseconds";
-    private static final String DB_TIMEUNIT_CONFIG_DOC = "timeunit for writing data to TDengine";
-    private static final String DB_TIMEUNIT_CONFIG_DISPLAY = "DB Time Unit";
-
     private static final String DB_SCHEMALESS_CONFIG = "db.schemaless";
     private static final String DB_SCHEMALESS_CONFIG_DOC = "schemaless format for writing data to TDengine";
     private static final String DB_SCHEMALESS_CONFIG_DISPLAY = "DB Schemaless Format";
@@ -69,7 +64,6 @@ public class SinkConfig extends ConnectionConfig {
     private final long retryBackoffMs;
     private final int batchSize;
     private final String charset;
-    private final String timeunit;
     private final SchemalessProtocolType schemalessTypeFormat;
     private final String connectionDatabasePrefix;
 
@@ -79,7 +73,6 @@ public class SinkConfig extends ConnectionConfig {
         this.retryBackoffMs = getInt(RETRY_BACKOFF_MS);
         this.batchSize = getInt(BATCH_SIZE);
         this.charset = getString(CHARSET_CONF);
-        this.timeunit = getString(DB_TIMEUNIT_CONFIG);
         this.schemalessTypeFormat = SchemalessProtocolType.parse(getString(DB_SCHEMALESS_CONFIG).trim());
         if (schemalessTypeFormat == SchemalessProtocolType.LINE) {
             this.timestampType = DataPrecision.getTimestampType(getString(DATA_PRECISION).trim());
@@ -141,18 +134,6 @@ public class SinkConfig extends ConnectionConfig {
                         RETRY_BACKOFF_MS_DISPLAY
                 )
                 .define(
-                        DB_TIMEUNIT_CONFIG,
-                        ConfigDef.Type.STRING,
-                        DB_TIMEUNIT_DEFAULT,
-                        TimeUnitValidator.INSTANCE,
-                        ConfigDef.Importance.MEDIUM,
-                        DB_TIMEUNIT_CONFIG_DOC,
-                        WRITES_GROUP,
-                        ++orderInGroup,
-                        ConfigDef.Width.SHORT,
-                        DB_TIMEUNIT_CONFIG_DISPLAY
-                )
-                .define(
                         DB_SCHEMALESS_CONFIG,
                         ConfigDef.Type.STRING,
                         ConfigDef.NO_DEFAULT_VALUE,
@@ -204,10 +185,6 @@ public class SinkConfig extends ConnectionConfig {
 
     public String getCharset() {
         return charset;
-    }
-
-    public String getTimeunit() {
-        return timeunit;
     }
 
     public SchemalessProtocolType getSchemalessTypeFormat() {

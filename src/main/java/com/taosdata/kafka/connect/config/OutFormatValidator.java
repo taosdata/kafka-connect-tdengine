@@ -6,10 +6,6 @@ import org.apache.kafka.common.config.ConfigException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 /**
  *
  */
@@ -22,7 +18,7 @@ public class OutFormatValidator implements ConfigDef.Validator {
     public void ensureValid(String name, Object value) {
         if (!OutputFormatEnum.isValid(String.valueOf(value))) {
             throw new ConfigException(name, value,
-                    "outFormat config must one of telnet/json");
+                    "outFormat config must one of line/json");
         }
     }
 }

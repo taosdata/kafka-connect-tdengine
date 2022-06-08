@@ -1,7 +1,6 @@
 package com.taosdata.kafka.connect.sink;
 
 import com.taosdata.jdbc.TSDBDriver;
-import com.taosdata.jdbc.enums.SchemalessProtocolType;
 import com.taosdata.jdbc.enums.SchemalessTimestampType;
 import com.taosdata.kafka.connect.db.CacheProcessor;
 import com.taosdata.kafka.connect.db.ConnectionProvider;
