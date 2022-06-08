@@ -55,7 +55,7 @@ public class MonitorThread extends Thread {
         if (null != tables && !tables.isEmpty()) {
             return tables;
         }
-        log.error("monitor tables is empty");
+        log.info("monitor tables is empty");
         long start = System.currentTimeMillis();
         long now = start;
         while ((null == tables || tables.isEmpty()) && (now - start) < config.getPollInterval()) {

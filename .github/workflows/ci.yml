@@ -1,0 +1,57 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - 'LICENSE'
+      - '*.md'
+      - '*.txt'
+      - 'logos/*'
+      - 'config/*'
+  pull_request:
+    branches:
+      - master
+    paths-ignore:
+      - 'LICENSE'
+      - '*.md'
+      - '*.txt'
+      - 'logos/*'
+      - 'config/*'
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+        java: [ 8 ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: checkout TDengine
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+          repository: 'taosdata/TDengine'
+          path: 'TDengine'
+          ref: 'develop'
+          submodules: 'recursive'
+      - name: install TDengine
+        run: cd TDengine && mkdir debug && cd debug && cmake .. -DBUILD_JDBC=false -DBUILD_TOOLS=false && make && sudo make install
+
+      - name: start taosd
+        run: nohup sudo taosd &
+
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - name: set up java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: ${{ matrix.java }}
+          java-package: jdk
+          cache: 'maven'
+
+      - name: Test
+        run: mvn -B clean test --file pom.xml
