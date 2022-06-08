@@ -12,7 +12,7 @@ on:
       - 'config/*'
   pull_request:
     branches:
-      - main
+      - master
     paths-ignore:
       - 'LICENSE'
       - '*.md'
