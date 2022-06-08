@@ -10,6 +10,15 @@ on:
       - '*.txt'
       - 'logos/*'
       - 'config/*'
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - 'LICENSE'
+      - '*.md'
+      - '*.txt'
+      - 'logos/*'
+      - 'config/*'
 
 jobs:
   build:
