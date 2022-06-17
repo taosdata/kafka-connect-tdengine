@@ -70,8 +70,8 @@ public class SourceConfig extends ConnectionConfig {
         super(config(), props);
         this.pollInterval = this.getInt(POLL_INTERVAL_MS_CONFIG);
 //        this.monitorTables = this.getBoolean(MONITOR_TABLES_CONFIG);
-        this.topicPrefix = this.getString(TOPIC_PREFIX_CONFIG).trim();
-        String time = this.getString(TIMESTAMP_INITIAL_CONFIG).trim();
+        this.topicPrefix = this.getString(TOPIC_PREFIX_CONFIG);
+        String time = this.getString(TIMESTAMP_INITIAL_CONFIG);
         if (null != time && time.trim().length() > 0) {
             DateTimeFormatter df = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             this.timestampInitial = Timestamp.valueOf(LocalDateTime.parse(time, df));
@@ -79,8 +79,8 @@ public class SourceConfig extends ConnectionConfig {
             this.timestampInitial = new Timestamp(0L);
         }
         this.fetchMaxRows = this.getInt(FETCH_MAX_ROWS_CONFIG);
-        this.tables = this.getList(SourceConstants.CONFIG_TABLES);
-        this.outFormat = this.getString(OUT_FORMAT_CONFIG).trim();
+        this.tables = this.getList(TABLES_CONFIG);
+        this.outFormat = this.getString(OUT_FORMAT_CONFIG);
     }
 
     public static ConfigDef config() {

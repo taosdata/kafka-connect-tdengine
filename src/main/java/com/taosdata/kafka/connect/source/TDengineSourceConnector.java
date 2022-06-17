@@ -58,7 +58,7 @@ public class TDengineSourceConnector extends SourceConnector {
             for (List<String> taskTables : tablesGroup) {
                 Map<String, String> taskProps = new HashMap<>(map);
                 String tables = String.join(",", taskTables);
-                taskProps.put(SourceConstants.CONFIG_TABLES, tables);
+                taskProps.put(SourceConfig.TABLES_CONFIG, tables);
                 result.add(taskProps);
             }
             log.info(

@@ -2,6 +2,7 @@ package com.taosdata.kafka.connect;
 
 import com.taosdata.kafka.connect.config.ConnectionConfig;
 import com.taosdata.kafka.connect.sink.TDengineSinkTask;
+import com.taosdata.kafka.connect.source.SourceConfig;
 import com.taosdata.kafka.connect.source.SourceConstants;
 import com.taosdata.kafka.connect.source.TDengineSourceConnector;
 import com.taosdata.kafka.connect.source.TDengineSourceTask;
@@ -53,7 +54,7 @@ class TDengineTaskTest {
         TDengineSourceConnector connector = new TDengineSourceConnector();
         connector.start(configMap);
         connector.taskConfigs(1).stream().findFirst()
-                .ifPresent(m -> configMap.put(SourceConstants.CONFIG_TABLES, m.get(SourceConstants.CONFIG_TABLES)));
+                .ifPresent(m -> configMap.put(SourceConfig.TABLES_CONFIG, m.get(SourceConfig.TABLES_CONFIG)));
 
         SourceTaskContext context = new SourceTaskContext() {
 
