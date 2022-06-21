@@ -5,8 +5,6 @@ package com.taosdata.kafka.connect.source;
  */
 public class SourceConstants {
 
-    public static final String CONFIG_TABLES = "tables";
-
     public static final String TABLE_NAME_KEY = "table";
 
     public static final String TIMESTAMP_MILLISECOND = "timestamp_millisecond";
