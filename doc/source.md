@@ -40,7 +40,7 @@ TDengine installed and running.
 
    ```
 
-   The `connection.url`,`connection.database` specify the connection URL,database name of the TDengine server. By
+   The `connection.url`, `connection.database` specify the connection URL,database name of the TDengine server. By
    default the `connection.user`,`connection.password` are `root` and `taosdata`.
 
 3. Run the connector with this configuration:
@@ -120,102 +120,102 @@ To use this connector, specify the name of the connector class in the `connector
 connector.class=com.taosdata.kafka.connect.source.TDengineSourceConnector
 ```
 
-- Type:string
-- Importance:high
-- Default:null
+- Type: string
+- Importance: high
+- Default: null
 
 ### tasks.max
 
 The connector can be configured to use as few as one task (tasks.max=1) or scale to as many tasks as required to capture all table changes.
 
-- Type:int
-- Importance:high
-- Default:1
+- Type: int
+- Importance: high
+- Default: 1
 
 ### connection.url
 
 The URL of the TDengine database to write to.
 
-- Type:string
-- Importance:high
-- Default:null
+- Type: string
+- Importance: high
+- Default: null
 
 ### connection.username
 
 The username to connect to TDengine with. default value is `root`.
 
-- Type:string
-- Importance:high
-- Default:null
+- Type: string
+- Importance: high
+- Default: null
 
 ### connection.password
 
 The password to connect to TDengine with. default value is `taosdata`.
 
-- Type:string
-- Importance:high
-- Default:null
+- Type: string
+- Importance: high
+- Default: null
 
 ### connection.database
 
 The TDengine database name from which records have to be read and publish data to configured Apache Kafka® topic.
 
-- Type:string
-- Importance:high
-- Default:null
+- Type: string
+- Importance: high
+- Default: null
 
 ### connection.attempts
 
 The maximum number of times to retry on errors before failing the connection.
 
-- Type:int
-- Importance:high
-- Default:3
+- Type: int
+- Importance: high
+- Default: 3
 
 ### connection.backoff.ms
 
 Backoff time duration to wait before retrying connection (in milliseconds).
 
-- Type:int
-- Importance:high
-- Default:5000
+- Type: int
+- Importance: high
+- Default: 5000
 
 ### topic.prefix
 
 Prefix that should be prepended to super table names to generate the name of Apache Kafka® topic to publish to.
 
-- Type:string
-- Importance:high
+- Type: string
+- Importance: high
 - Default: ""
 
 ### timestamp.initial
 
 The timestamp used for initial queries. If not specified, all data will be retrieved. format is `yyyy-MM-dd HH:mm:ss` 
 
-- Type:string
-- Importance:low
+- Type: string
+- Importance: low
 - Default: "1970-01-01 00:00:00"
 
 ### poll.interval.ms
 
 Frequency in ms to poll for new or removed tables, which may result in updated task configurations to start polling for data in added tables. (in milliseconds)
 
-- Type:int
-- Importance:medium
-- Default:1000
+- Type: int
+- Importance: medium
+- Default: 1000
 
 ### fetch.max.rows
 
 Maximum number of rows to include in a single batch when polling for new data. This setting can be used to limit the amount of data buffered internally in the connector.
 
-- Type:int
-- Importance:low
-- Default:100
+- Type: int
+- Importance: low
+- Default: 100
 
 ### out.format
 
 out format for writing data to kafka, may be one of json or telnet currently. default is `line`
 
-- Type:string
-- Importance:high
-- Default:line
+- Type: string
+- Importance: high
+- Default: line

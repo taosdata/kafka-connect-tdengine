@@ -28,7 +28,7 @@ This example assumes you are running Confluent version 7.1.1 locally on the defa
    value.converter=org.apache.kafka.connect.storage.StringConverter
    ```
 
-   The `connection.url`,`connection.database` specify the connection URL,database name of the TDengine server. By default the `connection.user`,`connection.password` are `root` and `taosdata`.
+   The `connection.url`, `connection.database` specify the connection URL,database name of the TDengine server. By default the `connection.user`,`connection.password` are `root` and `taosdata`.
 
 3. Run the connector with this configuration:
 
