@@ -121,7 +121,7 @@ public class TDengineSinkTask extends SinkTask {
                 throw new RetriableException(sqlAllMessagesException);
             } else {
                 if (reporter != null) {
-                    unrollAndRetry(batch);
+                    unrollAndRetry(batch, topic);
                 } else {
                     log.error(
                             "Failing task after exhausting retries; "
@@ -143,8 +143,13 @@ public class TDengineSinkTask extends SinkTask {
         return sqlAllMessagesException;
     }
 
-    private void unrollAndRetry(Collection<SinkRecord> records) {
+    private void unrollAndRetry(Collection<SinkRecord> records,String topic) {
         writer.close();
+        if (config.isSingleDatabase()) {
+            writer.setDbName(config.getConnectionDb());
+        } else {
+            writer.setDbName(config.getConnectionDatabasePrefix() + topic);
+        }
         for (SinkRecord record : records) {
             try {
                 writer.schemalessInsert(new String[]{String.valueOf(record.value())},
@@ -153,6 +158,11 @@ public class TDengineSinkTask extends SinkTask {
                 SQLException sqlAllMessagesException = getAllMessagesException(sqle);
                 reporter.report(record, sqlAllMessagesException);
                 writer.close();
+                if (config.isSingleDatabase()) {
+                    writer.setDbName(config.getConnectionDb());
+                } else {
+                    writer.setDbName(config.getConnectionDatabasePrefix() + topic);
+                }
             }
         }
     }
