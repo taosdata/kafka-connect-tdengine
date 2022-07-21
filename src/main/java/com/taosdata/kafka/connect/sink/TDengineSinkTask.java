@@ -144,7 +144,6 @@ public class TDengineSinkTask extends SinkTask {
     }
 
     private void unrollAndRetry(Collection<SinkRecord> records) {
-        writer.close();
         for (SinkRecord record : records) {
             try {
                 writer.schemalessInsert(new String[]{String.valueOf(record.value())},
@@ -152,7 +151,6 @@ public class TDengineSinkTask extends SinkTask {
             } catch (SQLException sqle) {
                 SQLException sqlAllMessagesException = getAllMessagesException(sqle);
                 reporter.report(record, sqlAllMessagesException);
-                writer.close();
             }
         }
     }
