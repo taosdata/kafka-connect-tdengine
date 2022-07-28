@@ -35,7 +35,7 @@ class TDengineTaskTest {
         configMap.put("connector.class", "com.taosdata.kafka.connect.sink.TDengineSinkConnector");
         task.start(configMap);
 
-        String line = "st,t1=3i64,t2=4f64,t3=\"t3\" c1=3i64,c3=L\"passit\",c2=false,c4=4f64 1626006833639000000";
+        String line = "st,t1=3,t2=4,t3=t3 c1=3i64,c3=L\"passit\",c2=false,c4=4f64 1626006833639000000";
         SinkRecord record = new SinkRecord(topic, 1, null, "key", null, line, 0);
         List<SinkRecord> records = Collections.singletonList(record);
         task.put(records);
@@ -87,7 +87,7 @@ class TDengineTaskTest {
         TDengineSourceTask task = new TDengineSourceTask();
         task.initialize(context);
         task.start(configMap);
-        String result = "st,t1=L\"3i64\",t2=L\"4f64\",t3=L\"\"t3\"\" c1=3i64,c3=L\"passit\",c2=false,c4=4.0f64 1626006833639000000";
+        String result = "st,t1=3,t2=4,t3=t3 c1=3i64,c3=L\"passit\",c2=false,c4=4.0f64 1626006833639000000";
         task.poll().stream().findFirst().ifPresent(e -> assertEquals(result, e.value()));
         task.stop();
     }

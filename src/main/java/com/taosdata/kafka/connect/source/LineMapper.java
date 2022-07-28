@@ -31,7 +31,7 @@ public class LineMapper extends TableMapper {
                     switch (value) {
                         case "TIMESTAMP":
                         case "NCHAR":
-                            sb.append(",").append(tag).append("=\"").append(resultSet.getString(tag)).append("\"");
+                            sb.append(",").append(tag).append("=").append(resultSet.getString(tag));
                             break;
                         case "INT":
                         case "TINYINT":
