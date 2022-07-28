@@ -117,7 +117,6 @@ class TDengineTaskTest {
         configMap.put("topic.prefix", "");
         configMap.put("timestamp.initial", "2022-01-01 00:00:00");
         configMap.put("fetch.max.rows", "10");
-        configMap.put("out.format", "line");
 
         connection = DriverManager.getConnection(configMap.get(ConnectionConfig.CONNECTION_URL_CONFIG), configMap.get(ConnectionConfig.CONNECTION_USER), configMap.get(ConnectionConfig.CONNECTION_PASSWORD));
         statement = connection.createStatement();
