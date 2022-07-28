@@ -34,7 +34,6 @@ TDengine installed and running.
    poll.interval.ms=1000
    topic.prefix=tdengine-
    fetch.max.rows=100
-   out.format=line
    key.converter=org.apache.kafka.connect.storage.StringConverter
    value.converter=org.apache.kafka.connect.storage.StringConverter
 
@@ -97,7 +96,6 @@ this configuration is used typically with [distributed workers](https://docs.con
     "topic.prefix": "tdengine-",
     "poll.interval.ms": 1000,
     "fetch.max.rows": 100,
-    "out.format": "line",
     "key.converter": "org.apache.kafka.connect.storage.StringConverter",
     "value.converter": "org.apache.kafka.connect.storage.StringConverter"
   }
@@ -212,10 +210,11 @@ Maximum number of rows to include in a single batch when polling for new data. T
 - Importance: low
 - Default: 100
 
-### out.format
+### value.converter
 
-out format for writing data to kafka, may be one of json or telnet currently. default is `line`
+Converter class used to convert between Kafka Connect format and the serialized form that is read from Kafka. currently support String and JSON format. 
+if *value.converter* use *org.apache.kafka.connect.json.JsonConverter*, The best practice is to add "value.converter.schemas.enable" property with "false".
 
-- Type: string
-- Importance: high
-- Default: line
+- Type:	string
+- Importance:	medium
+- Default:	"org.apache.kafka.connect.storage.StringConverter"

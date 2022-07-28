@@ -13,10 +13,10 @@ import org.apache.kafka.connect.source.SourceTaskContext;
 import org.apache.kafka.connect.storage.OffsetStorageReader;
 import org.junit.jupiter.api.*;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import java.sql.*;
 import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @TestMethodOrder(MethodOrderer.DisplayName.class)
 class TDengineTaskTest {
@@ -50,6 +50,9 @@ class TDengineTaskTest {
     @Test
     public void sourceTest() throws InterruptedException {
         configMap.put("connector.class", "com.taosdata.kafka.connect.source.TDengineSourceConnector");
+
+//        configMap.put("value.converter", "org.apache.kafka.connect.json.JsonConverter");
+//        configMap.put("value.converter.schemas.enable", "false");
 
         TDengineSourceConnector connector = new TDengineSourceConnector();
         connector.start(configMap);

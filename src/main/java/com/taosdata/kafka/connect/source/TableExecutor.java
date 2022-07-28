@@ -12,9 +12,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Map;
 
-import static com.taosdata.kafka.connect.source.SourceConstants.OUT_FORMAT_JSON;
-
-public class TableExecutor {
+public class TableExecutor implements Comparable<TableExecutor> {
     private static final Logger log = LoggerFactory.getLogger(TableExecutor.class);
 
     private final String tableName;
@@ -27,9 +25,10 @@ public class TableExecutor {
 
     private PendingRecord nextRecord;
     private boolean exhaustedResultRecord;
-    private Timestamp start;
+    private final Timestamp start;
 
     private final TableMapper mapper;
+    private long lastUpdate;
 
     public TableExecutor(String tableName,
                          String topic,
@@ -43,14 +42,18 @@ public class TableExecutor {
         this.committedOffset = this.offset = TimeStampOffset.fromMap(offset);
         this.partition = partition;
         this.start = startTime;
-
+        this.lastUpdate = 0L;
         this.exhaustedResultRecord = false;
         this.nextRecord = null;
-        if (OUT_FORMAT_JSON.equals(format)) {
-            mapper = new JsonMapper(topic, tableName, batchMaxRows, processor);
-        }else {
+        if (format.endsWith("StringConverter")) {
             mapper = new LineMapper(topic, tableName, batchMaxRows, processor);
+        } else {
+            mapper = new JsonMapper(topic, tableName, batchMaxRows, processor);
         }
+    }
+
+    public long getLastUpdate() {
+        return this.lastUpdate;
     }
 
     public void startQuery() throws SQLException, ConnectException {
@@ -68,26 +71,23 @@ public class TableExecutor {
         return tableName;
     }
 
-    public Timestamp getLastCommittedOffset() {
-        return committedOffset.getTimestampOffset();
-    }
-
-    public void reset(boolean resetOffset) {
+    public void reset(long now, boolean resetOffset) {
         if (resetOffset) {
             this.offset = this.committedOffset;
         }
         closeResultSet();
         mapper.closeStatement();
         this.nextRecord = null;
+        this.lastUpdate = now;
     }
 
     private void closeResultSet() {
         if (resultSet != null) {
             try {
                 resultSet.close();
-            } catch (SQLException ignored) {
+            } catch (SQLException err) {
                 // intentionally ignored
-                log.warn("closeResultSet error: ", ignored);
+                log.warn("closeResultSet error: ", err);
             }
         }
         resultSet = null;
@@ -128,5 +128,14 @@ public class TableExecutor {
 
     private boolean canCommitTimestamp(Timestamp current, Timestamp next) {
         return current == null || next == null || current.before(next);
+    }
+
+    @Override
+    public int compareTo(TableExecutor other) {
+        if (this.lastUpdate < other.lastUpdate) {
+            return -1;
+        } else {
+            return 1;
+        }
     }
 }

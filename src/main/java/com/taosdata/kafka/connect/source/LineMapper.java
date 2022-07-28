@@ -1,6 +1,7 @@
 package com.taosdata.kafka.connect.source;
 
 import com.taosdata.kafka.connect.db.Processor;
+import com.taosdata.kafka.connect.enums.OutputFormatEnum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +17,7 @@ public class LineMapper extends TableMapper {
     private static final Logger log = LoggerFactory.getLogger(LineMapper.class);
 
     public LineMapper(String topic, String tableName, int batchMaxRows, Processor processor) throws SQLException {
-        super(topic, tableName, batchMaxRows, processor);
+        super(topic, tableName, batchMaxRows, processor, OutputFormatEnum.LINE);
     }
 
     @Override

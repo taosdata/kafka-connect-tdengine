@@ -6,6 +6,9 @@ import com.taosdata.kafka.connect.db.ConnectionProvider;
 import com.taosdata.kafka.connect.db.Processor;
 import com.taosdata.kafka.connect.db.TSDBConnectionProvider;
 import com.taosdata.kafka.connect.util.VersionUtils;
+import org.apache.kafka.common.utils.SystemTime;
+import org.apache.kafka.common.utils.Time;
+import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
@@ -28,8 +31,13 @@ public class TDengineSourceTask extends SourceTask {
     private SourceConfig config;
     private Processor processor;
 
-    private final Queue<TableExecutor> executors = new LinkedList<>();
+    private final Queue<TableExecutor> executors = new PriorityQueue<>();
     private Map<TableExecutor, Integer> consecutiveEmptyResults;
+    private final Time time;
+
+    public TDengineSourceTask() {
+        this.time = new SystemTime();
+    }
 
     @Override
     public void start(Map<String, String> props) {
@@ -39,6 +47,7 @@ public class TDengineSourceTask extends SourceTask {
         properties.setProperty(TSDBDriver.PROPERTY_KEY_USER, config.getConnectionUser());
         properties.setProperty(TSDBDriver.PROPERTY_KEY_PASSWORD, config.getConnectionPassword());
         properties.setProperty(TSDBDriver.PROPERTY_KEY_CHARSET, "UTF-8");
+        String convert = props.getOrDefault("value.converter", "org.apache.kafka.connect.storage.StringConverter");
         ConnectionProvider provider = new TSDBConnectionProvider(config.getConnectionUrl(), properties,
                 config.getConnectionAttempts(), config.getConnectionBackoffMs());
         processor = new CacheProcessor<>(provider);
@@ -54,7 +63,7 @@ public class TDengineSourceTask extends SourceTask {
                 try {
                     executor = new TableExecutor(table, config.getTopicPrefix() + config.getConnectionDb(),
                             offset, processor, config.getFetchMaxRows(), partition, config.getTimestampInitial(),
-                            config.getOutFormat());
+                            convert);
                 } catch (SQLException e) {
                     log.error("error occur", e);
                     throw new ConnectException(e);
@@ -69,23 +78,21 @@ public class TDengineSourceTask extends SourceTask {
     @Override
     public List<SourceRecord> poll() throws InterruptedException {
 
-        TableExecutor executor = executors.poll();
+        TableExecutor executor = executors.peek();
         assert executor != null;
 
         // If not in the middle of an update, wait for next update time
-        if (null != executor.getLastCommittedOffset()) {
-            long nextUpdate = executor.getLastCommittedOffset().getTime()
-                    + config.getPollInterval();
-            long now = System.currentTimeMillis();
-            long sleepMs = Math.min(nextUpdate - now, 1000);
-            if (sleepMs > 0) {
-                log.trace("Waiting {} ms to poll {} next", nextUpdate - now, executor.getTableName());
-                TimeUnit.MILLISECONDS.sleep(sleepMs);
-            } else if (consecutiveEmptyResults.get(executor) > 0) {
-                TimeUnit.MILLISECONDS.sleep(config.getPollInterval());
-            }
+        long nextUpdate = executor.getLastUpdate() + config.getPollInterval();
+        long now = this.time.milliseconds();
+        long sleepMs = Math.min(nextUpdate - now, 1000);
+        if (sleepMs > 0) {
+            log.trace("Waiting {} ms to poll {} next", nextUpdate - now, executor.getTableName());
+            this.time.sleep(sleepMs);
+        } else if (consecutiveEmptyResults.get(executor) > 0) {
+            TimeUnit.MILLISECONDS.sleep(config.getPollInterval());
         }
-        log.info("start poll new data from table:" + executor.getTableName());
+
+        log.trace("start poll new data from table:" + executor.getTableName());
         List<SourceRecord> results = new ArrayList<>();
         try {
             executor.startQuery();
@@ -93,7 +100,14 @@ public class TDengineSourceTask extends SourceTask {
             int batchMaxRows = config.getFetchMaxRows();
             boolean hadNext = true;
             while (results.size() < batchMaxRows && (hadNext = executor.next())) {
-                results.add(executor.extractRecord());
+                SourceRecord record = executor.extractRecord();
+                if (record.value() instanceof List) {
+                    for (Struct struct : (List<Struct>) record.value()) {
+                        results.add(new SourceRecord(record.sourcePartition(), record.sourceOffset(), record.topic(), struct.schema(), struct));
+                    }
+                } else {
+                    results.add(record);
+                }
             }
             if (!hadNext) {
                 resetAndRequeueHead(executor, false);
@@ -116,7 +130,9 @@ public class TDengineSourceTask extends SourceTask {
     }
 
     private void resetAndRequeueHead(TableExecutor executor, boolean resetOffset) {
-        executor.reset(resetOffset);
+        TableExecutor e = executors.poll();
+        assert e == executor;
+        executor.reset(this.time.milliseconds(), resetOffset);
         executors.add(executor);
     }
 
