@@ -6,7 +6,7 @@
 
     <groupId>com.taosdata</groupId>
     <artifactId>kafka-connect-tdengine</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <packaging>jar</packaging>
     <name>kafka-connect-tdengine</name>
     <description>Kafka Connect Source and Sink Connectors for TDengine</description>
