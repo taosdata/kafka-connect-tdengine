@@ -77,7 +77,6 @@ public abstract class TableMapper {
             }
             if (format == OutputFormatEnum.JSON) {
                 for (String tag : tags) {
-                    log.error("tag name : " + tag + " " + Thread.currentThread().getId() + " " + this.hashCode());
                     tagBuilder.field(tag, convertType(columnType.get(tag)));
                 }
                 for (String column : columns) {

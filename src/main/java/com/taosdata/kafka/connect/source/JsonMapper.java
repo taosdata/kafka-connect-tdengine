@@ -30,6 +30,11 @@ public class JsonMapper extends TableMapper {
         try {
             ts = resultSet.getTimestamp(1);
             long result = resultSet.getLong(1);
+            if (result > 1_000_000_000_000_000_000L) {
+                result = result / 1_000_000;
+            } else if (result > 1_000_000_000_000_000L) {
+                result = result / 1_000;
+            }
             for (String tag : tags) {
                 tagStruct.put(tag, getValue(resultSet, tag, columnType.get(tag)));
             }
