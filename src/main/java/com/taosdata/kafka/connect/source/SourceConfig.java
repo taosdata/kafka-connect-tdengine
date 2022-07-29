@@ -1,7 +1,6 @@
 package com.taosdata.kafka.connect.source;
 
 import com.taosdata.kafka.connect.config.ConnectionConfig;
-import com.taosdata.kafka.connect.config.OutFormatValidator;
 import org.apache.kafka.common.config.ConfigDef;
 
 import java.sql.Timestamp;
@@ -53,18 +52,12 @@ public class SourceConfig extends ConnectionConfig {
     public static final String TABLES_CONFIG = "tables";
     private static final String TABLES_DOC = "List of tables for this task to watch for changes.";
 
-    private static final String OUT_FORMAT_CONFIG = "out.format";
-    private static final String OUT_FORMAT_CONFIG_DEFAULT = "line";
-    private static final String OUT_FORMAT_CONFIG_DOC = "out format for writing data to kafka";
-    private static final String OUT_FORMAT_CONFIG_DISPLAY = "out format may be one of json or telnet";
-
     private final int pollInterval;
     //    private boolean monitorTables;
     private final String topicPrefix;
     private final Timestamp timestampInitial;
     private final int fetchMaxRows;
     private final List<String> tables;
-    private final String outFormat;
 
     public SourceConfig(Map<?, ?> props) {
         super(config(), props);
@@ -80,7 +73,6 @@ public class SourceConfig extends ConnectionConfig {
         }
         this.fetchMaxRows = this.getInt(FETCH_MAX_ROWS_CONFIG);
         this.tables = this.getList(TABLES_CONFIG);
-        this.outFormat = this.getString(OUT_FORMAT_CONFIG);
     }
 
     public static ConfigDef config() {
@@ -148,18 +140,6 @@ public class SourceConfig extends ConnectionConfig {
                         Collections.EMPTY_LIST,
                         ConfigDef.Importance.LOW,
                         TABLES_DOC)
-                .define(
-                        OUT_FORMAT_CONFIG,
-                        ConfigDef.Type.STRING,
-                        OUT_FORMAT_CONFIG_DEFAULT,
-                        OutFormatValidator.INSTANCE,
-                        ConfigDef.Importance.MEDIUM,
-                        OUT_FORMAT_CONFIG_DOC,
-                        READ,
-                        ++orderInGroup,
-                        ConfigDef.Width.SHORT,
-                        OUT_FORMAT_CONFIG_DISPLAY
-                )
                 ;
     }
 
@@ -187,7 +167,4 @@ public class SourceConfig extends ConnectionConfig {
         return tables;
     }
 
-    public String getOutFormat() {
-        return outFormat.toLowerCase();
-    }
 }

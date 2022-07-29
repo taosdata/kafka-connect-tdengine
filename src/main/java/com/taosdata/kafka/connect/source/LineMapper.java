@@ -1,6 +1,7 @@
 package com.taosdata.kafka.connect.source;
 
 import com.taosdata.kafka.connect.db.Processor;
+import com.taosdata.kafka.connect.enums.OutputFormatEnum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +17,7 @@ public class LineMapper extends TableMapper {
     private static final Logger log = LoggerFactory.getLogger(LineMapper.class);
 
     public LineMapper(String topic, String tableName, int batchMaxRows, Processor processor) throws SQLException {
-        super(topic, tableName, batchMaxRows, processor);
+        super(topic, tableName, batchMaxRows, processor, OutputFormatEnum.LINE);
     }
 
     @Override
@@ -30,21 +31,21 @@ public class LineMapper extends TableMapper {
                     switch (value) {
                         case "TIMESTAMP":
                         case "NCHAR":
-                            sb.append(",").append(tag).append("=L\"").append(resultSet.getString(tag)).append("\"");
+                            sb.append(",").append(tag).append("=").append(resultSet.getString(tag));
                             break;
                         case "INT":
                         case "TINYINT":
                         case "SMALLINT":
-                            sb.append(",").append(tag).append("=").append(resultSet.getInt(tag)).append("i32");
+                            sb.append(",").append(tag).append("=").append(resultSet.getInt(tag));
                             break;
                         case "BIGINT":
-                            sb.append(",").append(tag).append("=").append(resultSet.getLong(tag)).append("i64");
+                            sb.append(",").append(tag).append("=").append(resultSet.getLong(tag));
                             break;
                         case "FLOAT":
-                            sb.append(",").append(tag).append("=").append(resultSet.getFloat(tag)).append("f32");
+                            sb.append(",").append(tag).append("=").append(resultSet.getFloat(tag));
                             break;
                         case "DOUBLE":
-                            sb.append(",").append(tag).append("=").append(resultSet.getDouble(tag)).append("f64");
+                            sb.append(",").append(tag).append("=").append(resultSet.getDouble(tag));
                             break;
                         case "BINARY":
                             sb.append(",").append(tag).append("=\"").append(resultSet.getString(tag)).append("\"");

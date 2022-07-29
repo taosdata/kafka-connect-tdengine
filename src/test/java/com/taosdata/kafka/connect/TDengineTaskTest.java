@@ -13,10 +13,10 @@ import org.apache.kafka.connect.source.SourceTaskContext;
 import org.apache.kafka.connect.storage.OffsetStorageReader;
 import org.junit.jupiter.api.*;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import java.sql.*;
 import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @TestMethodOrder(MethodOrderer.DisplayName.class)
 class TDengineTaskTest {
@@ -35,7 +35,7 @@ class TDengineTaskTest {
         configMap.put("connector.class", "com.taosdata.kafka.connect.sink.TDengineSinkConnector");
         task.start(configMap);
 
-        String line = "st,t1=3i64,t2=4f64,t3=\"t3\" c1=3i64,c3=L\"passit\",c2=false,c4=4f64 1626006833639000000";
+        String line = "st,t1=3,t2=4,t3=t3 c1=3i64,c3=L\"passit\",c2=false,c4=4f64 1626006833639000000";
         SinkRecord record = new SinkRecord(topic, 1, null, "key", null, line, 0);
         List<SinkRecord> records = Collections.singletonList(record);
         task.put(records);
@@ -50,6 +50,9 @@ class TDengineTaskTest {
     @Test
     public void sourceTest() throws InterruptedException {
         configMap.put("connector.class", "com.taosdata.kafka.connect.source.TDengineSourceConnector");
+
+//        configMap.put("value.converter", "org.apache.kafka.connect.json.JsonConverter");
+//        configMap.put("value.converter.schemas.enable", "false");
 
         TDengineSourceConnector connector = new TDengineSourceConnector();
         connector.start(configMap);
@@ -84,7 +87,7 @@ class TDengineTaskTest {
         TDengineSourceTask task = new TDengineSourceTask();
         task.initialize(context);
         task.start(configMap);
-        String result = "st,t1=L\"3i64\",t2=L\"4f64\",t3=L\"\"t3\"\" c1=3i64,c3=L\"passit\",c2=false,c4=4.0f64 1626006833639000000";
+        String result = "st,t1=3,t2=4,t3=t3 c1=3i64,c3=L\"passit\",c2=false,c4=4.0f64 1626006833639000000";
         task.poll().stream().findFirst().ifPresent(e -> assertEquals(result, e.value()));
         task.stop();
     }
@@ -114,7 +117,6 @@ class TDengineTaskTest {
         configMap.put("topic.prefix", "");
         configMap.put("timestamp.initial", "2022-01-01 00:00:00");
         configMap.put("fetch.max.rows", "10");
-        configMap.put("out.format", "line");
 
         connection = DriverManager.getConnection(configMap.get(ConnectionConfig.CONNECTION_URL_CONFIG), configMap.get(ConnectionConfig.CONNECTION_USER), configMap.get(ConnectionConfig.CONNECTION_PASSWORD));
         statement = connection.createStatement();
