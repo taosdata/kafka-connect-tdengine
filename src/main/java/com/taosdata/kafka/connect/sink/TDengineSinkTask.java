@@ -18,8 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 /**
  * TDengine sink task
@@ -31,11 +30,14 @@ public class TDengineSinkTask extends SinkTask {
     private Processor writer;
     ErrantRecordReporter reporter;
     private int remainingRetries;
-    ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
-        Thread t = new Thread(r);
-        t.setName("sink-task-" + t.getId());
-        return t;
-    });
+    ExecutorService executor = new ThreadPoolExecutor(1, 1,
+            0L, TimeUnit.MILLISECONDS,
+            new ArrayBlockingQueue<>(1000),
+            r -> {
+                Thread t = new Thread(r);
+                t.setName("sink-task-" + t.getId());
+                return t;
+            }, new ThreadPoolExecutor.CallerRunsPolicy());
 
     @Override
     public void start(Map<String, String> map) {
