@@ -109,89 +109,65 @@ public class TDengineSinkTask extends SinkTask {
         }
 
         try {
-            String superTable = null;
-            String table = null;
             List<JsonSql> values = new ArrayList<>();
 
+            String superTable = null;
+            String table = null;
             Set<String> colSet = new HashSet<>();
-            Set<String> tagSet = new HashSet<>();
             for (SinkRecord record : batch) {
                 JsonSql value = new JsonSql();
                 String recordString = String.valueOf(record.value());
                 JSONObject jsonObject = JSON.parseObject(recordString);
-                Object ts = jsonObject.get(SinkConstants.JSON_TIMESTAMP);
-                if (ts == null) {
-                    log.error("Record must contains " + SinkConstants.JSON_TIMESTAMP + " properties. record: " + recordString);
+                Object tsObject = jsonObject.get(SinkConstants.JSON_TIMESTAMP);
+                if (tsObject == null) {
+                    log.error("Record must contains {} properties. record: {}", SinkConstants.JSON_TIMESTAMP, recordString);
                     continue;
                 }
-                value.setTs(checkAndConvertString(ts));
+                value.setTs(checkAndConvertString(tsObject));
 
                 Object tNameObject = jsonObject.get(SinkConstants.JSON_TABLE_NAME);
                 if (tNameObject == null) {
-                    log.error("Record must contains " + SinkConstants.JSON_TABLE_NAME + " properties. record: " + recordString);
+                    log.error("Record must contains {} properties. record: {}", SinkConstants.JSON_TABLE_NAME, recordString);
                     continue;
                 }
-                String tName = String.valueOf(tNameObject);
-                if (!tName.equalsIgnoreCase(table)) {
-                    executSql(superTable, table, values);
+                String tName = String.valueOf(tNameObject).toLowerCase();
+                if (!tName.equals(table)) {
+                    executSql(values);
+                    values = new ArrayList<>();
                     table = tName;
                 }
+                value.settName(tName);
 
-                Object stName = jsonObject.get(SinkConstants.JSON_SUPER_TABLE_NAME);
-                if (stName == null && superTable == null) {
-                    //
-                } else if (stName != null && String.valueOf(stName).equalsIgnoreCase(superTable)) {
-                    JSONObject tagObject = jsonObject.getJSONObject(SinkConstants.JSON_TAGS);
-                    if (tagObject.size() != tagSet.size()) {
-                        executSql(superTable, table, values);
-                        tagSet.clear();
-
-                        Map<String, String> tagMap = new HashMap<>();
-                        for (Map.Entry<String, Object> col : tagObject.entrySet()) {
-                            tagMap.put(col.getKey(), checkAndConvertString(col.getValue()));
-                        }
-                        tagSet = tagMap.keySet();
-                        value.setCols(tagMap);
-                    } else {
-                        Map<String, String> tagMap = new HashMap<>();
-                        for (Map.Entry<String, Object> col : tagObject.entrySet()) {
-                            if (!tagSet.contains(col.getKey())) {
-                                executSql(superTable, table, values);
-                                tagSet.clear();
-                            }
-                            tagMap.put(col.getKey(), checkAndConvertString(col.getValue()));
-                        }
-                        if (tagSet.isEmpty()) {
-                            tagSet = tagMap.keySet();
-                        }
-                        value.setCols(tagMap);
+                Object stNameObject = jsonObject.get(SinkConstants.JSON_SUPER_TABLE_NAME);
+                if (stNameObject != null) {
+                    String stName = String.valueOf(stNameObject).toLowerCase();
+                    if (!stName.equals(superTable)) {
+                        executSql(values);
+                        values = new ArrayList<>();
+                        superTable = stName;
+                    }
+                    value.setStName(stName);
+                    Object tagObject = jsonObject.get(SinkConstants.JSON_TAG);
+                    if (tagObject != null) {
+                        String tag = checkAndConvertString(tagObject);
+                        value.setTag(tag);
                     }
                 } else {
-                    executSql(superTable, table, values);
-
-                    tagSet.clear();
-                    if (stName != null) {
-                        JSONObject tagObject = jsonObject.getJSONObject(SinkConstants.JSON_TAGS);
-                        Map<String, String> map = new HashMap<>();
-                        for (Map.Entry<String, Object> col : tagObject.entrySet()) {
-                            map.put(col.getKey(), checkAndConvertString(col.getValue()));
-                        }
-                        tagSet = map.keySet();
-                        value.setTags(map);
-                        superTable = String.valueOf(stName);
-                    } else {
+                    if (superTable != null) {
+                        executSql(values);
+                        values = new ArrayList<>();
                         superTable = null;
                     }
                 }
 
                 JSONObject propObject = jsonObject.getJSONObject(SinkConstants.JSON_PROPERTIES);
                 if (propObject == null) {
-                    log.error("Record must contains " + SinkConstants.JSON_PROPERTIES + " properties. record: " + recordString);
+                    log.error("Record must contains {} properties. record: {},", SinkConstants.JSON_PROPERTIES, recordString);
                     continue;
                 }
                 Map<String, String> colMap = new HashMap<>();
                 if (propObject.size() != colSet.size()) {
-                    executSql(superTable, table, values);
+                    executSql(values);
                     colSet.clear();
                     for (Map.Entry<String, Object> col : propObject.entrySet()) {
                         colMap.put(col.getKey(), checkAndConvertString(col.getValue()));
@@ -199,20 +175,21 @@ public class TDengineSinkTask extends SinkTask {
                     colSet = colMap.keySet();
                 } else {
                     for (Map.Entry<String, Object> col : propObject.entrySet()) {
-                        if (!colSet.contains(col.getKey())) {
-                            executSql(superTable, table, values);
-                            tagSet.clear();
+                        if (!colSet.isEmpty() && !colSet.contains(col.getKey())) {
+                            colSet.clear();
                         }
                         colMap.put(col.getKey(), checkAndConvertString(col.getValue()));
                     }
-                    if (tagSet.isEmpty()) {
-                        tagSet = colMap.keySet();
+                    if (colSet.isEmpty()) {
+                        executSql(values);
+                        values = new ArrayList<>();
+                        colSet = colMap.keySet();
                     }
                 }
                 value.setCols(colMap);
                 values.add(value);
             }
-            executSql(superTable, table, values);
+            executSql(values);
         } catch (SQLException sqle) {
             log.warn("Write of {} records failed, remainingRetries={}", batch.size(), remainingRetries, sqle);
             SQLException sqlAllMessagesException = getAllMessagesException(sqle);
@@ -238,43 +215,33 @@ public class TDengineSinkTask extends SinkTask {
         return String.valueOf(o);
     }
 
-    private void executSql(String stable, String table, List<JsonSql> values) throws SQLException {
-        String sql = convertSql(stable, table, values);
+    private void executSql(List<JsonSql> values) throws SQLException {
+        if (values.isEmpty())
+            return;
+
+        String sql = convertSql(values);
         if (sql != null) {
             writer.execute(sql);
         }
     }
 
-    private String convertSql(String stable, String table, List<JsonSql> jsons) {
-        if (table == null || jsons.isEmpty()) {
-            return null;
-        }
-
-        JsonSql jsonSql = jsons.get(0);
+    private String convertSql(List<JsonSql> jsons) {
+        JsonSql jsonSql = jsons.get(jsons.size() - 1);
+        String table = jsonSql.gettName();
+        String stable = jsonSql.getStName();
         StringBuilder sb = new StringBuilder("insert into ").append(table);
         if (stable != null) {
-            sb.append(" using ").append(stable);
+            sb.append(" using ").append(stable).append(" (").append(SinkConstants.JSON_TABLE_NAME);
 
-            Map<String, String> tags = jsonSql.getTags();
-            sb.append(" (");
-            StringBuilder tagSb = new StringBuilder(" tags (");
-
-            int i = 0;
-            for (String s : tags.keySet()) {
-                sb.append(s);
-                tagSb.append(tags.get(s));
-                if (i == tags.keySet().size() - 1) {
-                    sb.append(") ");
-                    tagSb.append(") ");
-                } else {
-                    sb.append(", ");
-                    tagSb.append(", ");
-                }
-                i++;
+            StringBuilder tagSb = new StringBuilder(" tags ('").append(table).append("'");
+            String tag = jsonSql.getTag();
+            if (tag != null) {
+                sb.append(", ").append(SinkConstants.JSON_TAG).append(")");
+                tagSb.append(", ").append(tag).append(")");
             }
             sb.append(tagSb);
         }
-        // TODO confirm timestamp col name
+
         sb.append(" (ts, ");
 
         Map<String, String> cols = jsonSql.getCols();
@@ -319,18 +286,50 @@ public class TDengineSinkTask extends SinkTask {
 
     private void unrollAndRetry(Collection<SinkRecord> records) {
         for (SinkRecord record : records) {
-//            try {
-//                String table = "";
-//                JsonSql jsonSql = new JsonSql();
-//                JSONObject jsonObject = JSON.parseObject(String.valueOf(record.value()));
-//                String
-//                String stable = String.valueOf(jsonObject.get(SinkConstants.JSON_SUPER_TABLE_NAME));
-//                if (stable)
-//                executSql(stable,table,Collections.singletonList(jsonSql));
-//            } catch (SQLException sqle) {
-//                SQLException sqlAllMessagesException = getAllMessagesException(sqle);
-//                reporter.report(record, sqlAllMessagesException);
-//            }
+            try {
+                JsonSql value = new JsonSql();
+                String recordString = String.valueOf(record.value());
+                JSONObject jsonObject = JSON.parseObject(recordString);
+
+                Object tsObject = jsonObject.get(SinkConstants.JSON_TIMESTAMP);
+                if (tsObject == null) {
+                    throw new SQLException("Record must contains " + SinkConstants.JSON_TIMESTAMP + " properties. record: " + recordString);
+                }
+                value.setTs(String.valueOf(tsObject));
+
+                Object tNameObject = jsonObject.get(SinkConstants.JSON_TABLE_NAME);
+                if (tNameObject == null) {
+                    throw new SQLException("Record must contains " + SinkConstants.JSON_TABLE_NAME + " properties. record: " + recordString);
+                }
+                String tName = String.valueOf(tNameObject).toLowerCase();
+                value.settName(tName);
+
+                Object stNameObject = jsonObject.get(SinkConstants.JSON_SUPER_TABLE_NAME);
+                if (stNameObject != null) {
+                    String stName = String.valueOf(stNameObject).toLowerCase();
+                    value.setStName(stName);
+                    Object tagObject = jsonObject.get(SinkConstants.JSON_TAG);
+                    if (tagObject != null) {
+                        String tag = checkAndConvertString(tagObject);
+                        value.setTag(tag);
+                    }
+                }
+
+                JSONObject propObject = jsonObject.getJSONObject(SinkConstants.JSON_PROPERTIES);
+                if (propObject == null) {
+                    throw new SQLException("Record must contains " + SinkConstants.JSON_PROPERTIES + " properties. record: " + recordString);
+                }
+                Map<String, String> colMap = new HashMap<>();
+                for (Map.Entry<String, Object> col : propObject.entrySet()) {
+                    colMap.put(col.getKey(), checkAndConvertString(col.getValue()));
+                }
+                value.setCols(colMap);
+
+                executSql(Collections.singletonList(value));
+            } catch (SQLException sqle) {
+                SQLException sqlAllMessagesException = getAllMessagesException(sqle);
+                reporter.report(record, sqlAllMessagesException);
+            }
         }
     }
 

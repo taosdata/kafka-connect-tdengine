@@ -7,7 +7,7 @@ public class JsonSql {
     private String tName;
     private String ts;
     private Map<String, String> cols;
-    private Map<String, String> tags;
+    private String tag;
 
     public String getTs() {
         return ts;
@@ -41,12 +41,12 @@ public class JsonSql {
         this.cols = cols;
     }
 
-    public Map<String, String> getTags() {
-        return tags;
+    public String getTag() {
+        return tag;
     }
 
-    public void setTags(Map<String, String> tags) {
-        this.tags = tags;
+    public void setTag(String tag) {
+        this.tag = tag;
     }
 
     @Override
@@ -56,7 +56,7 @@ public class JsonSql {
                 ", tName='" + tName + '\'' +
                 ", ts='" + ts + '\'' +
                 ", cols=" + cols +
-                ", tags=" + tags +
+                ", tag='" + tag + '\'' +
                 '}';
     }
 }
