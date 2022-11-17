@@ -117,6 +117,7 @@ public class TDengineSinkTask extends SinkTask {
             for (SinkRecord record : batch) {
                 JsonSql value = new JsonSql();
                 String recordString = String.valueOf(record.value());
+                log.trace("raw record String: {}", recordString);
                 JSONObject jsonObject = JSON.parseObject(recordString);
                 Object tsObject = jsonObject.get(SinkConstants.JSON_TIMESTAMP);
                 if (tsObject == null) {
