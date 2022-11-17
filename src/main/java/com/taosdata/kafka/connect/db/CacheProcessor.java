@@ -64,7 +64,7 @@ public class CacheProcessor<T extends ConnectionProvider> implements Processor {
     @Override
     public boolean execute(String sql) throws SQLException {
         Statement statement = this.getConnection().createStatement();
-        log.info("Processor execute SQL : {}", sql);
+        log.trace("Processor execute SQL : {}", sql);
         boolean result = statement.execute(sql);
         if (result) {
             ResultSet rs = null;
