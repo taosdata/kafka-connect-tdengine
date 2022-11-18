@@ -77,24 +77,22 @@ public class TDengineSinkTask extends SinkTask {
                     + "database...", size, sinkRecord.topic(), sinkRecord.kafkaPartition(), sinkRecord.kafkaOffset());
         });
 
-        executor.submit(() -> {
-            List<SinkRecord> currentGroup = new ArrayList<>();
-            int maxBatchSize = config.getBatchSize();
+        List<SinkRecord> currentGroup = new ArrayList<>();
+        int maxBatchSize = config.getBatchSize();
 
-            String previousTopic = "";
-            for (SinkRecord record : records) {
-                if (record == null) continue;
-                if (maxBatchSize > 0 && currentGroup.size() == maxBatchSize || !previousTopic.equals(record.topic())) {
+        String previousTopic = "";
+        for (SinkRecord record : records) {
+            if (record == null) continue;
+            if (maxBatchSize > 0 && currentGroup.size() == maxBatchSize || !previousTopic.equals(record.topic())) {
 
-                    bulkWriteBatch(currentGroup, previousTopic);
-                    // next batch insert
-                    currentGroup = new ArrayList<>();
-                    previousTopic = record.topic();
-                }
-                currentGroup.add(record);
+                bulkWriteBatch(currentGroup, previousTopic);
+                // next batch insert
+                currentGroup = new ArrayList<>();
+                previousTopic = record.topic();
             }
-            bulkWriteBatch(currentGroup, previousTopic);
-        });
+            currentGroup.add(record);
+        }
+        bulkWriteBatch(currentGroup, previousTopic);
     }
 
     private void bulkWriteBatch(final List<SinkRecord> batch, String topic) {
@@ -121,15 +119,13 @@ public class TDengineSinkTask extends SinkTask {
                 JSONObject jsonObject = JSON.parseObject(recordString);
                 Object tsObject = jsonObject.get(SinkConstants.JSON_TIMESTAMP);
                 if (tsObject == null) {
-                    log.error("Record must contains {} properties. record: {}", SinkConstants.JSON_TIMESTAMP, recordString);
-                    continue;
+                    throw new RecordException("Record must contains " + SinkConstants.JSON_TIMESTAMP + " properties. record: " + recordString);
                 }
                 value.setTs(checkAndConvertString(tsObject));
 
                 Object tNameObject = jsonObject.get(SinkConstants.JSON_TABLE_NAME);
                 if (tNameObject == null) {
-                    log.error("Record must contains {} properties. record: {}", SinkConstants.JSON_TABLE_NAME, recordString);
-                    continue;
+                    throw new RecordException("Record must contains " + SinkConstants.JSON_TABLE_NAME + " properties. record: " + recordString);
                 }
                 String tName = String.valueOf(tNameObject).toLowerCase();
                 if (!tName.equals(table)) {
@@ -163,8 +159,7 @@ public class TDengineSinkTask extends SinkTask {
 
                 JSONObject propObject = jsonObject.getJSONObject(SinkConstants.JSON_PROPERTIES);
                 if (propObject == null) {
-                    log.error("Record must contains {} properties. record: {},", SinkConstants.JSON_PROPERTIES, recordString);
-                    continue;
+                    throw new RecordException("Record must contains " + SinkConstants.JSON_PROPERTIES + " properties. record: " + recordString);
                 }
                 Map<String, String> colMap = new HashMap<>();
                 if (propObject.size() != colSet.size()) {
@@ -191,20 +186,21 @@ public class TDengineSinkTask extends SinkTask {
                 values.add(value);
             }
             executSql(values);
-        } catch (SQLException sqle) {
-            log.warn("Write of {} records failed, remainingRetries={}", batch.size(), remainingRetries, sqle);
-            SQLException sqlAllMessagesException = getAllMessagesException(sqle);
+        } catch (Exception e) {
+            log.warn("Write of {} records failed, remainingRetries={} ", batch.size(), remainingRetries, e);
             if (remainingRetries > 0) {
-                writer.close();
+                if (e instanceof  SQLException){
+                    writer.close();
+                }
                 remainingRetries--;
                 context.timeout(config.getRetryBackoffMs());
-                throw new RetriableException(sqlAllMessagesException);
+                throw new RetriableException(e);
             } else {
                 if (reporter != null) {
                     unrollAndRetry(batch);
                 } else {
                     log.error("Failing task after exhausting retries; " + "encountered exceptions on last write attempt. " + "For complete details on each exception, please enable DEBUG logging.");
-                    throw new ConnectException(sqlAllMessagesException);
+                    throw new ConnectException(e);
                 }
             }
         }
@@ -275,16 +271,6 @@ public class TDengineSinkTask extends SinkTask {
         return sb.toString();
     }
 
-    private SQLException getAllMessagesException(SQLException sqle) {
-        StringBuilder sqleAllMessages = new StringBuilder("Exception chain:" + System.lineSeparator());
-        for (Throwable e : sqle) {
-            sqleAllMessages.append(e).append(System.lineSeparator());
-        }
-        SQLException sqlAllMessagesException = new SQLException(sqleAllMessages.toString());
-        sqlAllMessagesException.setNextException(sqle);
-        return sqlAllMessagesException;
-    }
-
     private void unrollAndRetry(Collection<SinkRecord> records) {
         for (SinkRecord record : records) {
             try {
@@ -294,13 +280,13 @@ public class TDengineSinkTask extends SinkTask {
 
                 Object tsObject = jsonObject.get(SinkConstants.JSON_TIMESTAMP);
                 if (tsObject == null) {
-                    throw new SQLException("Record must contains " + SinkConstants.JSON_TIMESTAMP + " properties. record: " + recordString);
+                    throw new RecordException("Record must contains " + SinkConstants.JSON_TIMESTAMP + " properties. record: " + recordString);
                 }
                 value.setTs(String.valueOf(tsObject));
 
                 Object tNameObject = jsonObject.get(SinkConstants.JSON_TABLE_NAME);
                 if (tNameObject == null) {
-                    throw new SQLException("Record must contains " + SinkConstants.JSON_TABLE_NAME + " properties. record: " + recordString);
+                    throw new RecordException("Record must contains " + SinkConstants.JSON_TABLE_NAME + " properties. record: " + recordString);
                 }
                 String tName = String.valueOf(tNameObject).toLowerCase();
                 value.settName(tName);
@@ -318,7 +304,7 @@ public class TDengineSinkTask extends SinkTask {
 
                 JSONObject propObject = jsonObject.getJSONObject(SinkConstants.JSON_PROPERTIES);
                 if (propObject == null) {
-                    throw new SQLException("Record must contains " + SinkConstants.JSON_PROPERTIES + " properties. record: " + recordString);
+                    throw new RecordException("Record must contains " + SinkConstants.JSON_PROPERTIES + " properties. record: " + recordString);
                 }
                 Map<String, String> colMap = new HashMap<>();
                 for (Map.Entry<String, Object> col : propObject.entrySet()) {
@@ -327,9 +313,8 @@ public class TDengineSinkTask extends SinkTask {
                 value.setCols(colMap);
 
                 executSql(Collections.singletonList(value));
-            } catch (SQLException sqle) {
-                SQLException sqlAllMessagesException = getAllMessagesException(sqle);
-                reporter.report(record, sqlAllMessagesException);
+            } catch (Exception e) {
+                reporter.report(record, e);
             }
         }
     }
