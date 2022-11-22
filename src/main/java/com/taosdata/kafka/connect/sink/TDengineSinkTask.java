@@ -119,13 +119,21 @@ public class TDengineSinkTask extends SinkTask {
                 JSONObject jsonObject = JSON.parseObject(recordString);
                 Object tsObject = jsonObject.get(SinkConstants.JSON_TIMESTAMP);
                 if (tsObject == null) {
-                    throw new RecordException("Record must contains " + SinkConstants.JSON_TIMESTAMP + " properties. record: " + recordString);
+                    if (remainingRetries == config.getMaxRetries() - 1) {
+                        RecordException e = new RecordException("Record must contains " + SinkConstants.JSON_TIMESTAMP + " properties. record: " + recordString);
+                        reporter.report(record, e);
+                    }
+                    continue;
                 }
                 value.setTs(checkAndConvertString(tsObject));
 
                 Object tNameObject = jsonObject.get(SinkConstants.JSON_TABLE_NAME);
                 if (tNameObject == null) {
-                    throw new RecordException("Record must contains " + SinkConstants.JSON_TABLE_NAME + " properties. record: " + recordString);
+                    if (remainingRetries == config.getMaxRetries() - 1) {
+                        RecordException e = new RecordException("Record must contains " + SinkConstants.JSON_TABLE_NAME + " properties. record: " + recordString);
+                        reporter.report(record, e);
+                    }
+                    continue;
                 }
                 String tName = String.valueOf(tNameObject).toLowerCase();
                 if (!tName.equals(table)) {
@@ -136,30 +144,38 @@ public class TDengineSinkTask extends SinkTask {
                 value.settName(tName);
 
                 Object stNameObject = jsonObject.get(SinkConstants.JSON_SUPER_TABLE_NAME);
-                if (stNameObject != null) {
-                    String stName = String.valueOf(stNameObject).toLowerCase();
-                    if (!stName.equals(superTable)) {
-                        executSql(values);
-                        values = new ArrayList<>();
-                        superTable = stName;
+                if (stNameObject == null) {
+                    if (remainingRetries == config.getMaxRetries() - 1) {
+                        RecordException e = new RecordException("Record must contains " + SinkConstants.JSON_SUPER_TABLE_NAME + " properties. record: " + recordString);
+                        reporter.report(record, e);
                     }
-                    value.setStName(stName);
-                    Object tagObject = jsonObject.get(SinkConstants.JSON_TAG);
-                    if (tagObject != null) {
-                        String tag = checkAndConvertString(tagObject);
-                        value.setTag(tag);
-                    }
-                } else {
-                    if (superTable != null) {
-                        executSql(values);
-                        values = new ArrayList<>();
-                        superTable = null;
-                    }
+                    continue;
                 }
+                String stName = String.valueOf(stNameObject).toLowerCase();
+                if (!stName.equals(superTable)) {
+                    executSql(values);
+                    values = new ArrayList<>();
+                    superTable = stName;
+                }
+                value.setStName(stName);
+                Object tagObject = jsonObject.get(SinkConstants.JSON_TAG);
+                if (tagObject == null) {
+                    if (remainingRetries == config.getMaxRetries() - 1) {
+                        RecordException e = new RecordException("Record must contains " + SinkConstants.JSON_TAG + " properties. record: " + recordString);
+                        reporter.report(record, e);
+                    }
+                    continue;
+                }
+                String tag = checkAndConvertString(tagObject);
+                value.setTag(tag);
 
                 JSONObject propObject = jsonObject.getJSONObject(SinkConstants.JSON_PROPERTIES);
                 if (propObject == null) {
-                    throw new RecordException("Record must contains " + SinkConstants.JSON_PROPERTIES + " properties. record: " + recordString);
+                    if (remainingRetries == config.getMaxRetries() - 1) {
+                        RecordException e = new RecordException("Record must contains " + SinkConstants.JSON_PROPERTIES + " properties. record: " + recordString);
+                        reporter.report(record, e);
+                    }
+                    continue;
                 }
                 Map<String, String> colMap = new HashMap<>();
                 if (propObject.size() != colSet.size()) {
@@ -189,7 +205,7 @@ public class TDengineSinkTask extends SinkTask {
         } catch (Exception e) {
             log.warn("Write of {} records failed, remainingRetries={} ", batch.size(), remainingRetries, e);
             if (remainingRetries > 0) {
-                if (e instanceof  SQLException){
+                if (e instanceof SQLException) {
                     writer.close();
                 }
                 remainingRetries--;
@@ -217,9 +233,7 @@ public class TDengineSinkTask extends SinkTask {
             return;
 
         String sql = convertSql(values);
-        if (sql != null) {
-            writer.execute(sql);
-        }
+        writer.execute(sql);
     }
 
     private String convertSql(List<JsonSql> jsons) {
@@ -280,31 +294,33 @@ public class TDengineSinkTask extends SinkTask {
 
                 Object tsObject = jsonObject.get(SinkConstants.JSON_TIMESTAMP);
                 if (tsObject == null) {
-                    throw new RecordException("Record must contains " + SinkConstants.JSON_TIMESTAMP + " properties. record: " + recordString);
+                    continue;
                 }
                 value.setTs(String.valueOf(tsObject));
 
                 Object tNameObject = jsonObject.get(SinkConstants.JSON_TABLE_NAME);
                 if (tNameObject == null) {
-                    throw new RecordException("Record must contains " + SinkConstants.JSON_TABLE_NAME + " properties. record: " + recordString);
+                    continue;
                 }
                 String tName = String.valueOf(tNameObject).toLowerCase();
                 value.settName(tName);
 
                 Object stNameObject = jsonObject.get(SinkConstants.JSON_SUPER_TABLE_NAME);
-                if (stNameObject != null) {
-                    String stName = String.valueOf(stNameObject).toLowerCase();
-                    value.setStName(stName);
-                    Object tagObject = jsonObject.get(SinkConstants.JSON_TAG);
-                    if (tagObject != null) {
-                        String tag = checkAndConvertString(tagObject);
-                        value.setTag(tag);
-                    }
+                if (stNameObject == null) {
+                    continue;
                 }
+                String stName = String.valueOf(stNameObject).toLowerCase();
+                value.setStName(stName);
+                Object tagObject = jsonObject.get(SinkConstants.JSON_TAG);
+                if (tagObject == null) {
+                    continue;
+                }
+                String tag = checkAndConvertString(tagObject);
+                value.setTag(tag);
 
                 JSONObject propObject = jsonObject.getJSONObject(SinkConstants.JSON_PROPERTIES);
                 if (propObject == null) {
-                    throw new RecordException("Record must contains " + SinkConstants.JSON_PROPERTIES + " properties. record: " + recordString);
+                    continue;
                 }
                 Map<String, String> colMap = new HashMap<>();
                 for (Map.Entry<String, Object> col : propObject.entrySet()) {
