@@ -2,6 +2,7 @@ package com.taosdata.kafka.connect.sink;
 
 import com.taosdata.kafka.connect.config.CharsetValidator;
 import com.taosdata.kafka.connect.config.ConnectionConfig;
+import com.taosdata.kafka.connect.config.SchemaValidator;
 import org.apache.kafka.common.config.ConfigDef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,8 +36,8 @@ public class SinkConfig extends ConnectionConfig {
                     + " table, when possible.";
     private static final String BATCH_SIZE_DISPLAY = "Batch Size";
 
-    public final static String CHARSET_CONF = "db.charset";
-    public final static String CHARSET_DOC = "The character set to use for String key and values.";
+    public static final String CHARSET_CONF = "db.charset";
+    public static final String CHARSET_DOC = "The character set to use for String key and values.";
 
     public static final String CONNECTION_PREFIX_CONFIG = CONNECTION_PREFIX + "database.prefix";
     public static final String CONNECTION_PREFIX_CONFIG_DEFAULT = "";
@@ -47,11 +48,17 @@ public class SinkConfig extends ConnectionConfig {
             "this means the topic will be mapped to the new database which will have same name as the topic";
     private static final String CONNECTION_PREFIX_DISPLAY = "JDBC sink destination Database prefix";
 
+    public static final String SCHEMA_LOCATION = "schema.location";
+    private static final String SCHEMA_LOCATION_DOC =
+            "Specifies the absolute path to the record schema file";
+    private static final String SCHEMA_LOCATION_DISPLAY = "Schema location";
+
     private final int maxRetries;
     private final long retryBackoffMs;
     private final int batchSize;
     private final String charset;
     private final String connectionDatabasePrefix;
+    private final String schemaLocation;
 
     public SinkConfig(Map<?, ?> originals) {
         super(config(), originals);
@@ -60,6 +67,7 @@ public class SinkConfig extends ConnectionConfig {
         this.batchSize = getInt(BATCH_SIZE);
         this.charset = getString(CHARSET_CONF);
         this.connectionDatabasePrefix = getString(CONNECTION_PREFIX_CONFIG).trim();
+        this.schemaLocation = getString(SCHEMA_LOCATION).trim();
     }
 
     public static ConfigDef config() {
@@ -120,6 +128,18 @@ public class SinkConfig extends ConnectionConfig {
                         ConfigDef.Importance.LOW,
                         CHARSET_DOC
                 )
+                .define(
+                        SCHEMA_LOCATION,
+                        ConfigDef.Type.STRING,
+                        ConfigDef.NO_DEFAULT_VALUE,
+                        SchemaValidator.INSTANCE,
+                        ConfigDef.Importance.HIGH,
+                        SCHEMA_LOCATION_DOC,
+                        WRITES_GROUP,
+                        ++orderInGroup,
+                        ConfigDef.Width.LONG,
+                        SCHEMA_LOCATION_DISPLAY
+                )
                 ;
     }
 
@@ -145,5 +165,9 @@ public class SinkConfig extends ConnectionConfig {
 
     public String getConnectionDatabasePrefix() {
         return connectionDatabasePrefix;
+    }
+
+    public String getSchemaLocation() {
+        return schemaLocation;
     }
 }

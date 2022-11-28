@@ -1,4 +1,4 @@
-package com.taosdata.kafka.connect.sink;
+package com.taosdata.kafka.connect.exception;
 
 public class RecordException extends RuntimeException {
     public RecordException(String s) {

@@ -1,21 +1,16 @@
 package com.taosdata.kafka.connect.sink;
 
+import com.google.common.collect.Maps;
+
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class JsonSql {
     private String stName;
     private String tName;
-    private String ts;
-    private Map<String, String> cols;
-    private String tag;
-
-    public String getTs() {
-        return ts;
-    }
-
-    public void setTs(String ts) {
-        this.ts = ts;
-    }
+    private Map<String, String> cols = Maps.newHashMap();
+    private Map<String, String> tag = Maps.newHashMap();
+    private Map<String, String> all = Maps.newHashMap();
 
     public String getStName() {
         return stName;
@@ -41,12 +36,20 @@ public class JsonSql {
         this.cols = cols;
     }
 
-    public String getTag() {
+    public Map<String, String> getTag() {
         return tag;
     }
 
-    public void setTag(String tag) {
+    public void setTag(Map<String, String> tag) {
         this.tag = tag;
+    }
+
+    public Map<String, String> getAll() {
+        return all;
+    }
+
+    public void setAll(Map<String, String> all) {
+        this.all = all;
     }
 
     @Override
@@ -54,9 +57,9 @@ public class JsonSql {
         return "JsonSql{" +
                 "stName='" + stName + '\'' +
                 ", tName='" + tName + '\'' +
-                ", ts='" + ts + '\'' +
-                ", cols=" + cols +
-                ", tag='" + tag + '\'' +
+                ", cols=" + cols.entrySet().stream().map(e -> "key:" + e.getKey() + ", value: " + e.getValue()).collect(Collectors.joining("-----")) +
+                ", tag=" + tag.entrySet().stream().map(e -> "key:" + e.getKey() + ", value: " + e.getValue()).collect(Collectors.joining("*******")) +
+                ", all=" + all +
                 '}';
     }
 }
