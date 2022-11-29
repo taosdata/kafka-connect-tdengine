@@ -12,7 +12,6 @@ import com.taosdata.kafka.connect.db.TSDBConnectionProvider;
 import com.taosdata.kafka.connect.exception.RecordException;
 import com.taosdata.kafka.connect.exception.SchemaException;
 import com.taosdata.kafka.connect.util.VersionUtils;
-import jdk.internal.joptsimple.internal.Strings;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.RetriableException;
