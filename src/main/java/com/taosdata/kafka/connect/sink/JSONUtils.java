@@ -18,14 +18,7 @@ public class JSONUtils {
                     JSON.toJSONString(schemaObject), SCHEMA_NAME));
         }
         String name = schemaObject.getString(SCHEMA_NAME);
-//        if (!schemaObject.containsKey(SCHEMA_DATABASE)) {
-//            throw new SchemaException(String.format("schema: %s cannot find %s",
-//                    name, SCHEMA_DATABASE));
-//        }
-        if (!schemaObject.containsKey(SCHEMA_STABLE_NAME_SPECIFY) && !schemaObject.containsKey(SCHEMA_STABLE_NAME)) {
-            throw new SchemaException(String.format("schema: %s cannot find stable name", name));
-        }
-        if (!schemaObject.containsKey(SCHEMA_TABLE_NAME)) {
+        if (!schemaObject.containsKey(SCHEMA_STABLE_NAME_DEFAULT) && !schemaObject.containsKey(SCHEMA_STABLE_NAME)) {
             throw new SchemaException(String.format("schema: %s cannot find stable name", name));
         }
     }

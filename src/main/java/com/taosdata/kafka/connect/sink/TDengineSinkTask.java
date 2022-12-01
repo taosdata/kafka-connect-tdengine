@@ -2,7 +2,9 @@ package com.taosdata.kafka.connect.sink;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 import com.taosdata.jdbc.TSDBDriver;
 import com.taosdata.kafka.connect.db.CacheProcessor;
@@ -56,19 +58,19 @@ public class TDengineSinkTask extends SinkTask {
                 schemaStr.append(str);
             }
         } catch (IOException e) {
-            throw new ConfigException(String.format("JSON schema configuration can not get. error '%s'", e));
+            throw new ConfigException(String.format("JSON schema configuration can not get for path: %s. error '%s'", schemaPath, e));
         }
 
         JSONObject jsonObject = JSON.parseObject(schemaStr.toString());
 
         Map<String, Schema> schemas = Maps.newHashMap();
-        for (Object o : jsonObject.getJSONArray(SCHEMAS)) {
-            Schema schema = new Schema();
-            Map<String, Index> indexMap = Maps.newHashMap();
-            String stableName = null;
-
-            JSONObject schemaObject = (JSONObject) JSON.toJSON(o);
+        JSONArray jsonArray = jsonObject.getJSONArray(SCHEMAS);
+        for (int i = 0; i < jsonArray.size(); i++) {
+            JSONObject schemaObject = jsonArray.getJSONObject(i);
             schemaObjectValidator(schemaObject);
+
+            Schema schema = new Schema();
+            Map<String, StableSchema> stableSchemaMap = Maps.newHashMap();
             for (Map.Entry<String, Object> entry : schemaObject.entrySet()) {
                 switch (entry.getKey()) {
                     case SCHEMA_NAME: {
@@ -83,60 +85,78 @@ public class TDengineSinkTask extends SinkTask {
                         schema.setDatabase(getString(entry.getValue()));
                         break;
                     }
-                    case SCHEMA_STABLE_NAME_SPECIFY: {
-                        schema.setStableNameSpecify(getString(entry.getValue()));
-                        break;
-                    }
                     case SCHEMA_STABLE_NAME: {
-                        stableName = getString(entry.getValue());
+                        schema.setStableName(getString(entry.getValue()));
                         break;
                     }
-                    case SCHEMA_TABLE_NAME: {
-                        if (entry.getValue() == null) {
-                            throw new SchemaException(String.format("schema: %s. %s's value is null",
-                                    schemaStr, SCHEMA_TABLE_NAME));
+                    case SCHEMA_STABLE_NAME_DEFAULT: {
+                        schema.setDefaultStable(getString(entry.getValue()));
+                        break;
+                    }
+                    case SCHEMA_STABLES: {
+                        JSONObject stableObject = (JSONObject) JSON.toJSON(entry.getValue());
+                        for (String stName : stableObject.keySet()) {
+                            StableSchema stableSchema = new StableSchema();
+                            stableSchemaMap.put(stName, stableSchema);
+                            JSONObject tableObject = stableObject.getJSONObject(stName);
+                            Map<String, Index> indexMap = Maps.newHashMap();
+                            stableSchema.setIndexMap(indexMap);
+                            for (Map.Entry<String, Object> tableEntry : tableObject.entrySet()) {
+                                switch (tableEntry.getKey()) {
+                                    case SCHEMA_TABLE_NAME: {
+                                        if (tableEntry.getValue() == null) {
+                                            throw new SchemaException(String.format("schema: %s. %s's value is null",
+                                                    schemaStr, SCHEMA_TABLE_NAME));
+                                        }
+                                        JSONArray objects = JSON.parseArray(String.valueOf(tableEntry.getValue()));
+                                        stableSchema.setTableName(objects.toArray(new String[0]));
+                                        break;
+                                    }
+                                    case SCHEMA_DELIMITER: {
+                                        stableSchema.setDelimiter(getString(tableEntry.getValue()));
+                                        break;
+                                    }
+                                    default: {
+                                        String key = tableEntry.getKey();
+                                        String[] split = key.split(Schema.SEPARATOR);
+                                        Map<String, Index> tmp = indexMap;
+                                        for (int j = 0; j < split.length - 1; j++) {
+                                            String name = split[j];
+                                            if (tmp.containsKey(name)) {
+                                                Index index = tmp.get(name);
+                                                tmp = index.getIndexMap();
+                                                continue;
+                                            }
+                                            Index index = new Index(name);
+                                            tmp.put(name, index);
+                                            tmp = index.getIndexMap();
+                                        }
+                                        String name = split[split.length - 1];
+                                        Index index = new Index(name);
+                                        JSONObject value = (JSONObject) JSON.toJSON(tableEntry.getValue());
+                                        index.setColumn(json2Col(value));
+                                        tmp.put(name, index);
+                                    }
+                                }
+                            }
                         }
-                        JSONArray objects = JSON.parseArray(String.valueOf(entry.getValue()));
-                        schema.setTableName(objects.toArray(new String[0]));
-                        break;
-                    }
-                    case SCHEMA_DELIMITER: {
-                        schema.setDelimiter(getString(entry.getValue()));
                         break;
                     }
                     default: {
-                        String key = entry.getKey();
-                        String[] split = key.split(Schema.SEPARATOR);
-                        Map<String, Index> tmp = indexMap;
-                        for (int i = 0; i < split.length - 1; i++) {
-                            String name = split[i];
-                            if (tmp.containsKey(name)) {
-                                Index index = tmp.get(name);
-                                tmp = index.getIndexMap();
-                                continue;
-                            }
-                            Index index = new Index(name);
-                            tmp.put(name, index);
-                            tmp = index.getIndexMap();
-                        }
-                        String name = split[split.length - 1];
-                        Index index = new Index(name);
-                        JSONObject value = (JSONObject) JSON.toJSON(entry.getValue());
-                        index.setColumn(json2Col(value));
-                        tmp.put(name, index);
+                        // other undefined schema
                     }
                 }
             }
-            if (null != schema.getStableNameSpecify()) {
-                schema.setStableName(null);
-            } else {
-                if (null == stableName) {
-                    throw new SchemaException(String.format("schema: %s. %s and %s cannot be both empty ",
-                            schemaStr, SCHEMA_STABLE_NAME, SCHEMA_STABLE_NAME_SPECIFY));
-                }
-                schema.setStableName(stableName);
+            if (null == schema.getStableName() && null == schema.getDefaultStable()) {
+                throw new SchemaException(String.format("schema: %s. %s and %s cannot be both empty ",
+                        JSON.toJSONString(schema), SCHEMA_STABLE_NAME, SCHEMA_STABLE_NAME_DEFAULT));
             }
-            schema.setIndexMap(indexMap);
+            if (!Strings.isNullOrEmpty(schema.getDefaultStable())
+                    && !stableSchemaMap.containsKey(schema.getDefaultStable())) {
+                throw new SchemaException(String.format("default stableName: %s cannot found in schema: %s.",
+                        schema.getDefaultStable(), JSON.toJSONString(schema)));
+            }
+            schema.setStableSchemaMap(stableSchemaMap);
             schemas.put(schema.getName(), schema);
         }
 
@@ -214,14 +234,14 @@ public class TDengineSinkTask extends SinkTask {
             List<JsonSql> values = new ArrayList<>();
             for (SinkRecord record : batch) {
                 JsonSql value = null;
-                String recordString = String.valueOf(record.value());
+                String recordString = getString(record.value());
                 log.trace("raw record String: {}", recordString);
-                JSONObject jsonObject = JSON.parseObject(recordString);
                 Schema schema = topics.get(topic);
                 try {
-                    value = schemaHandler(schema, jsonObject);
-                } catch (RecordException e) {
+                    value = schemaHandler(schema, recordString);
+                } catch (RecordException | JSONException e) {
                     reporter.report(record, e);
+                    continue;
                 }
                 values.add(value);
             }
@@ -246,29 +266,57 @@ public class TDengineSinkTask extends SinkTask {
         }
     }
 
-    private JsonSql schemaHandler(Schema schema, JSONObject jsonObject) {
+    private JsonSql schemaHandler(Schema schema, String recordString) {
+        if (null == recordString) {
+            throw new RecordException("record is null");
+        }
+        JSONObject jsonObject = JSON.parseObject(recordString);
         JsonSql sql = new JsonSql();
 
-        for (Map.Entry<String, Index> entry : schema.getIndexMap().entrySet()) {
+        String stableName = schema.getStableName();
+        String defaultStable = schema.getDefaultStable();
+        String name;
+        if (!Strings.isNullOrEmpty(stableName)) {
+            String[] split = stableName.split(Schema.SEPARATOR);
+            String s = findValue(split, jsonObject);
+            if (s != null) {
+                name = s;
+            } else {
+                if (Strings.isNullOrEmpty(defaultStable)) {
+                    String msg = String.format("record : %s could not be found a suitable configuration in schema: %s."
+                            , recordString, schema.getName());
+                    log.error(msg);
+                    throw new RecordException(msg);
+                }
+                name = defaultStable;
+            }
+        } else {
+            if (Strings.isNullOrEmpty(defaultStable)) {
+                String msg = String.format("record : %s could not be found a suitable configuration in schema: %s."
+                        , recordString, schema.getName());
+                log.error(msg);
+                throw new RecordException(msg);
+            }
+            name = defaultStable;
+        }
+        sql.setStName(name);
+
+        StableSchema stableScheme = schema.getStableSchemaMap().get(name);
+        if (null == stableScheme){
+            String msg = String.format("record : %s could not be found a suitable configuration in schema: %s."
+                    , recordString, schema.getName());
+            log.error(msg);
+            throw new RecordException(msg);
+        }
+        for (Map.Entry<String, Index> entry : stableScheme.getIndexMap().entrySet()) {
             convert(entry.getValue(), jsonObject.get(entry.getKey()), sql);
         }
 
-        if (null != schema.getStableNameSpecify()) {
-            sql.setStName(schema.getStableNameSpecify());
+        if (stableScheme.getDelimiter() != null) {
+            sql.settName(Arrays.stream(stableScheme.getTableName()).map(c -> sql.getAll().get(c))
+                    .collect(Collectors.joining(stableScheme.getDelimiter())));
         } else {
-            if (sql.getAll().containsKey(schema.getStableName())) {
-                sql.setStName(sql.getAll().get(schema.getStableName()));
-            } else {
-                throw new RecordException(String.format("schema: %s cannot find stable value, %s config is %s"
-                        , schema.getName(), SCHEMA_STABLE_NAME, schema.getStableName()));
-            }
-        }
-
-        if (schema.getDelimiter() != null) {
-            sql.settName(Arrays.stream(schema.getTableName()).map(c -> sql.getAll().get(c))
-                    .collect(Collectors.joining(schema.getDelimiter())));
-        }else {
-            sql.settName(sql.getAll().get(schema.getTableName()[0]));
+            sql.settName(sql.getAll().get(stableScheme.getTableName()[0]));
         }
         return sql;
     }
@@ -308,11 +356,27 @@ public class TDengineSinkTask extends SinkTask {
                 }
             }
         } else {
-
             for (Map.Entry<String, Index> entry : index.getIndexMap().entrySet()) {
                 convert(entry.getValue(), ((JSONObject) object).get(entry.getKey()), sql);
             }
         }
+    }
+
+    private String findValue(String[] strings, JSONObject jsonObject) {
+        try {
+            if (strings.length == 1) {
+                return jsonObject.getString(strings[0]);
+            }
+            String key = strings[0];
+            if (jsonObject.containsKey(key)) {
+                JSONObject json = jsonObject.getJSONObject(key);
+                strings = Arrays.copyOfRange(strings, 1, strings.length);
+                findValue(strings, json);
+            }
+        } catch (Exception e) {
+            return null;
+        }
+        return null;
     }
 
     private String checkAndConvertString(Object o) {
@@ -373,9 +437,7 @@ public class TDengineSinkTask extends SinkTask {
     private void unrollAndRetry(Collection<SinkRecord> records) {
         for (SinkRecord record : records) {
             try {
-                JSONObject jsonObject = JSON.parseObject(String.valueOf(record.value()));
-
-                JsonSql value = schemaHandler(topics.get(record.topic()), jsonObject);
+                JsonSql value = schemaHandler(topics.get(record.topic()), getString(record.value()));
 
                 executSql(Collections.singletonList(value));
             } catch (Exception e) {

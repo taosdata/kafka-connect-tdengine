@@ -1,5 +1,7 @@
 package com.taosdata.kafka.connect.sink;
 
+import com.google.common.collect.Maps;
+
 import java.util.Map;
 
 public class Schema {
@@ -7,11 +9,9 @@ public class Schema {
 
     private String name;
     private String database;
-    private String stableNameSpecify;
     private String stableName;
-    private String[] tableName;
-    private String delimiter;
-    private Map<String, Index> indexMap;
+    private String defaultStable;
+    private Map<String, StableSchema> stableSchemaMap = Maps.newHashMap();
 
     public String getName() {
         return name;
@@ -29,14 +29,6 @@ public class Schema {
         this.database = database;
     }
 
-    public String getStableNameSpecify() {
-        return stableNameSpecify;
-    }
-
-    public void setStableNameSpecify(String stableNameSpecify) {
-        this.stableNameSpecify = stableNameSpecify;
-    }
-
     public String getStableName() {
         return stableName;
     }
@@ -45,27 +37,19 @@ public class Schema {
         this.stableName = stableName;
     }
 
-    public String[] getTableName() {
-        return tableName;
+    public String getDefaultStable() {
+        return defaultStable;
     }
 
-    public void setTableName(String[] tableName) {
-        this.tableName = tableName;
+    public void setDefaultStable(String defaultStable) {
+        this.defaultStable = defaultStable;
     }
 
-    public String getDelimiter() {
-        return delimiter;
+    public Map<String, StableSchema> getStableSchemaMap() {
+        return stableSchemaMap;
     }
 
-    public void setDelimiter(String delimiter) {
-        this.delimiter = delimiter;
-    }
-
-    public Map<String, Index> getIndexMap() {
-        return indexMap;
-    }
-
-    public void setIndexMap(Map<String, Index> indexMap) {
-        this.indexMap = indexMap;
+    public void setStableSchemaMap(Map<String, StableSchema> stableSchemaMap) {
+        this.stableSchemaMap = stableSchemaMap;
     }
 }
