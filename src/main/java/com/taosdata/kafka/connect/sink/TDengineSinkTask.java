@@ -240,6 +240,7 @@ public class TDengineSinkTask extends SinkTask {
                 try {
                     value = schemaHandler(schema, recordString);
                 } catch (RecordException | JSONException e) {
+                    log.error(String.valueOf(e));
                     reporter.report(record, e);
                     continue;
                 }
@@ -285,7 +286,6 @@ public class TDengineSinkTask extends SinkTask {
                 if (Strings.isNullOrEmpty(defaultStable)) {
                     String msg = String.format("record : %s could not be found a suitable configuration in schema: %s."
                             , recordString, schema.getName());
-                    log.error(msg);
                     throw new RecordException(msg);
                 }
                 name = defaultStable;
@@ -294,7 +294,6 @@ public class TDengineSinkTask extends SinkTask {
             if (Strings.isNullOrEmpty(defaultStable)) {
                 String msg = String.format("record : %s could not be found a suitable configuration in schema: %s."
                         , recordString, schema.getName());
-                log.error(msg);
                 throw new RecordException(msg);
             }
             name = defaultStable;
@@ -305,7 +304,6 @@ public class TDengineSinkTask extends SinkTask {
         if (null == stableScheme){
             String msg = String.format("record : %s could not be found a suitable configuration in schema: %s."
                     , recordString, schema.getName());
-            log.error(msg);
             throw new RecordException(msg);
         }
         for (Map.Entry<String, Index> entry : stableScheme.getIndexMap().entrySet()) {
