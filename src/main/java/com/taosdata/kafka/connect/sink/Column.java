@@ -5,7 +5,7 @@ public class Column {
     private String targetType;
     private String targetColumn;
     private boolean tag;
-    private boolean optional;
+    private boolean optional = true;
     private Object defaultValue;
     private String other;
 
