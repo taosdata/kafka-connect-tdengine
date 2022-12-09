@@ -27,4 +27,8 @@ public class SinkConstants {
     public static final String SCHEMA_COLUMN_OPTIONAL = "optional";
     public static final String SCHEMA_COLUMN_DEFAULT = "default";
     public static final String SCHEMA_COLUMN_OTHER = "other";
+
+    public static final String SCHEMA_TYPE_LOCAL = "local";
+    public static final String SCHEMA_TYPE_REMOTE = "remote";
+    public static final String SCHEMA_STRING = "schemaString";
 }

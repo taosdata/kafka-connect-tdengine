@@ -14,7 +14,6 @@ import com.taosdata.kafka.connect.db.TSDBConnectionProvider;
 import com.taosdata.kafka.connect.exception.RecordException;
 import com.taosdata.kafka.connect.exception.SchemaException;
 import com.taosdata.kafka.connect.util.VersionUtils;
-import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.RetriableException;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
@@ -23,9 +22,6 @@ import org.apache.kafka.connect.sink.SinkTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -50,18 +46,9 @@ public class TDengineSinkTask extends SinkTask {
         log.info("Starting TDengine Sink task...");
         config = new SinkConfig(map);
         initTask();
-        String schemaPath = config.getSchemaLocation();
-        StringBuilder schemaStr = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new FileReader(schemaPath))) {
-            String str;
-            while ((str = reader.readLine()) != null) {
-                schemaStr.append(str);
-            }
-        } catch (IOException e) {
-            throw new ConfigException(String.format("JSON schema configuration can not get for path: %s. error '%s'", schemaPath, e));
-        }
 
-        JSONObject jsonObject = JSON.parseObject(schemaStr.toString());
+        String schemaStr = map.get(SCHEMA_STRING);
+        JSONObject jsonObject = JSON.parseObject(schemaStr);
 
         Map<String, Schema> schemas = Maps.newHashMap();
         JSONArray jsonArray = jsonObject.getJSONArray(SCHEMAS);

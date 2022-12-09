@@ -2,6 +2,7 @@ package com.taosdata.kafka.connect.sink;
 
 import com.taosdata.kafka.connect.config.CharsetValidator;
 import com.taosdata.kafka.connect.config.ConnectionConfig;
+import com.taosdata.kafka.connect.config.SchemaTypeValidator;
 import com.taosdata.kafka.connect.config.SchemaValidator;
 import org.apache.kafka.common.config.ConfigDef;
 import org.slf4j.Logger;
@@ -53,12 +54,19 @@ public class SinkConfig extends ConnectionConfig {
             "Specifies the absolute path to the record schema file";
     private static final String SCHEMA_LOCATION_DISPLAY = "Schema location";
 
+    public static final String SCHEMA_TYPE = "schema.type";
+    public static final String SCHEMA_TYPE_DEFAULT = "local";
+    private static final String SCHEMA_TYPE_DOC =
+            "schema location is remote or local";
+    private static final String SCHEMA_TYPE_DISPLAY = "Schema location type";
+
     private final int maxRetries;
     private final long retryBackoffMs;
     private final int batchSize;
     private final String charset;
     private final String connectionDatabasePrefix;
     private final String schemaLocation;
+    private final String schemaType;
 
     public SinkConfig(Map<?, ?> originals) {
         super(config(), originals);
@@ -68,6 +76,7 @@ public class SinkConfig extends ConnectionConfig {
         this.charset = getString(CHARSET_CONF);
         this.connectionDatabasePrefix = getString(CONNECTION_PREFIX_CONFIG).trim();
         this.schemaLocation = getString(SCHEMA_LOCATION).trim();
+        this.schemaType = getString(SCHEMA_TYPE).trim();
     }
 
     public static ConfigDef config() {
@@ -140,6 +149,18 @@ public class SinkConfig extends ConnectionConfig {
                         ConfigDef.Width.LONG,
                         SCHEMA_LOCATION_DISPLAY
                 )
+                .define(
+                        SCHEMA_TYPE,
+                        ConfigDef.Type.STRING,
+                        SCHEMA_TYPE_DEFAULT,
+                        SchemaTypeValidator.INSTANCE,
+                        ConfigDef.Importance.MEDIUM,
+                        SCHEMA_TYPE_DOC,
+                        WRITES_GROUP,
+                        ++orderInGroup,
+                        ConfigDef.Width.SHORT,
+                        SCHEMA_TYPE_DISPLAY
+                )
                 ;
     }
 
@@ -169,5 +190,9 @@ public class SinkConfig extends ConnectionConfig {
 
     public String getSchemaLocation() {
         return schemaLocation;
+    }
+
+    public String getSchemaType() {
+        return schemaType;
     }
 }
