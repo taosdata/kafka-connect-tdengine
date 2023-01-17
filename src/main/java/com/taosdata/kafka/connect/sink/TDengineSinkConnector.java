@@ -75,6 +75,7 @@ public class TDengineSinkConnector extends SinkConnector {
             throw new ConfigException(String.format("JSON schema configuration can not get for path: %s with type %s. error '%s'",
                     schemaLocation, schemaType, e));
         }
+        log.error("schema type: {}, sink schema content: {}.", schemaType, schemaStr);
         configProps = map;
         configProps.put(SCHEMA_STRING, schemaStr);
     }
