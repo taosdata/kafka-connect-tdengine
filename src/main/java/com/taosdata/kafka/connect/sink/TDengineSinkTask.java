@@ -14,6 +14,7 @@ import com.taosdata.kafka.connect.db.TSDBConnectionProvider;
 import com.taosdata.kafka.connect.exception.RecordException;
 import com.taosdata.kafka.connect.exception.SchemaException;
 import com.taosdata.kafka.connect.util.VersionUtils;
+import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.RetriableException;
 import org.apache.kafka.connect.sink.ErrantRecordReporter;
@@ -22,6 +23,8 @@ import org.apache.kafka.connect.sink.SinkTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.*;
+import java.net.URL;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -46,6 +49,48 @@ public class TDengineSinkTask extends SinkTask {
         log.info("Starting TDengine Sink task...");
         config = new SinkConfig(map);
         initTask();
+
+        String schemaStr1 = null;
+        String schemaLocation = config.getSchemaLocation();
+        String schemaType = config.getSchemaType();
+        try {
+            if (SCHEMA_TYPE_LOCAL.equals(schemaType)) {
+                StringBuilder sb = new StringBuilder();
+                try (BufferedReader reader = new BufferedReader(new FileReader(schemaLocation))) {
+                    String str;
+                    while ((str = reader.readLine()) != null) {
+                        sb.append(str);
+                    }
+                }
+                schemaStr1 = sb.toString();
+            } else {
+                InputStream in = null;
+                ByteArrayOutputStream outputStream = null;
+                try {
+                    URL url = new URL(schemaLocation);
+                    in = url.openStream();
+                    outputStream = new ByteArrayOutputStream();
+                    byte[] b = new byte[1024];
+                    int n;
+                    while ((n = in.read(b)) > 0) {
+                        outputStream.write(b, 0, n);
+                    }
+                    outputStream.flush();
+                    outputStream.toByteArray();
+                    schemaStr1 = outputStream.toString();
+                } finally {
+                    if (outputStream != null)
+                        outputStream.close();
+                    if (in != null)
+                        in.close();
+                }
+            }
+        } catch (IOException e) {
+            throw new ConfigException(String.format("JSON schema configuration can not get for path: %s with type %s. error '%s'",
+                    schemaLocation, schemaType, e));
+        }
+        log.error("schema type: {}, task schema content: {}.", schemaType, schemaStr1);
+
 
         String schemaStr = map.get(SCHEMA_STRING);
         JSONObject jsonObject = JSON.parseObject(schemaStr);
@@ -210,6 +255,10 @@ public class TDengineSinkTask extends SinkTask {
         if (batch.isEmpty()) {
             return;
         }
+        Schema schema = topics.get(topic);
+        if (null == schema) {
+            return;
+        }
 
         if (config.isSingleDatabase()) {
             writer.setDbName(config.getConnectionDb());
@@ -220,10 +269,10 @@ public class TDengineSinkTask extends SinkTask {
         try {
             List<JsonSql> values = new ArrayList<>();
             for (SinkRecord record : batch) {
-                JsonSql value = null;
+
+                List<JsonSql> value = null;
                 String recordString = getString(record.value());
                 log.trace("raw record String: {}", recordString);
-                Schema schema = topics.get(topic);
                 try {
                     value = schemaHandler(schema, recordString);
                 } catch (RecordException | JSONException e) {
@@ -231,7 +280,7 @@ public class TDengineSinkTask extends SinkTask {
                     reporter.report(record, e);
                     continue;
                 }
-                values.add(value);
+                values.addAll(value);
             }
             executSql(values);
         } catch (Exception e) {
@@ -254,11 +303,27 @@ public class TDengineSinkTask extends SinkTask {
         }
     }
 
-    private JsonSql schemaHandler(Schema schema, String recordString) {
+    private List<JsonSql> schemaHandler(Schema schema, String recordString) {
         if (null == recordString) {
             throw new RecordException("record is null");
         }
-        JSONObject jsonObject = JSON.parseObject(recordString);
+        Object obj = JSON.parse(recordString);
+        if (obj instanceof JSONObject) {
+            JSONObject jsonObject = (JSONObject) obj;
+            return Collections.singletonList(convertJSONObject(schema, jsonObject));
+        } else if (obj instanceof JSONArray) {
+            JSONArray jsonArray = (JSONArray) obj;
+            List<JsonSql> jsonSqlList = new ArrayList<>();
+            for (Object o : jsonArray) {
+                JSONObject jsonObject = (JSONObject) JSON.toJSON(o);
+                jsonSqlList.add(convertJSONObject(schema, jsonObject));
+            }
+            return jsonSqlList;
+        }
+        return Collections.EMPTY_LIST;
+    }
+
+    private JsonSql convertJSONObject(Schema schema, JSONObject jsonObject) {
         JsonSql sql = new JsonSql();
 
         String stableName = schema.getStableName();
@@ -272,7 +337,7 @@ public class TDengineSinkTask extends SinkTask {
             } else {
                 if (Strings.isNullOrEmpty(defaultStable)) {
                     String msg = String.format("record : %s could not be found a suitable configuration in schema: %s."
-                            , recordString, schema.getName());
+                            , JSON.toJSONString(jsonObject), schema.getName());
                     throw new RecordException(msg);
                 }
                 name = defaultStable;
@@ -280,7 +345,7 @@ public class TDengineSinkTask extends SinkTask {
         } else {
             if (Strings.isNullOrEmpty(defaultStable)) {
                 String msg = String.format("record : %s could not be found a suitable configuration in schema: %s."
-                        , recordString, schema.getName());
+                        , JSON.toJSONString(jsonObject), schema.getName());
                 throw new RecordException(msg);
             }
             name = defaultStable;
@@ -288,9 +353,9 @@ public class TDengineSinkTask extends SinkTask {
         sql.setStName(name);
 
         StableSchema stableScheme = schema.getStableSchemaMap().get(name);
-        if (null == stableScheme){
+        if (null == stableScheme) {
             String msg = String.format("record : %s could not be found a suitable configuration in schema: %s."
-                    , recordString, schema.getName());
+                    , JSON.toJSONString(jsonObject), schema.getName());
             throw new RecordException(msg);
         }
         for (Map.Entry<String, Index> entry : stableScheme.getIndexMap().entrySet()) {
@@ -422,9 +487,9 @@ public class TDengineSinkTask extends SinkTask {
     private void unrollAndRetry(Collection<SinkRecord> records) {
         for (SinkRecord record : records) {
             try {
-                JsonSql value = schemaHandler(topics.get(record.topic()), getString(record.value()));
+                List<JsonSql> value = schemaHandler(topics.get(record.topic()), getString(record.value()));
 
-                executSql(Collections.singletonList(value));
+                executSql(value);
             } catch (Exception e) {
                 reporter.report(record, e);
             }
