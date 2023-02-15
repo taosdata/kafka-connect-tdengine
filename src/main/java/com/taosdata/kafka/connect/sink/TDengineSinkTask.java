@@ -314,10 +314,13 @@ public class TDengineSinkTask extends SinkTask {
         } else if (obj instanceof JSONArray) {
             JSONArray jsonArray = (JSONArray) obj;
             List<JsonSql> jsonSqlList = new ArrayList<>();
-            for (Object o : jsonArray) {
+            jsonArray.forEach(o -> {
                 JSONObject jsonObject = (JSONObject) JSON.toJSON(o);
-                jsonSqlList.add(convertJSONObject(schema, jsonObject));
-            }
+                JsonSql jsonSql = convertJSONObject(schema, jsonObject);
+                if (null != jsonSql) {
+                    jsonSqlList.add(jsonSql);
+                }
+            });
             return jsonSqlList;
         }
         return Collections.EMPTY_LIST;
@@ -367,6 +370,13 @@ public class TDengineSinkTask extends SinkTask {
                     .collect(Collectors.joining(stableScheme.getDelimiter())));
         } else {
             sql.settName(sql.getAll().get(stableScheme.getTableName()[0]));
+        }
+        if (null == sql.getCols()) {
+          return null;
+        }
+        long num = sql.getCols().entrySet().stream().filter(e -> e.getValue() != null).count();
+        if (num == 0) {
+          return null;
         }
         return sql;
     }
