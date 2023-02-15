@@ -362,6 +362,9 @@ public class TDengineSinkTask extends SinkTask {
             throw new RecordException(msg);
         }
         for (Map.Entry<String, Index> entry : stableScheme.getIndexMap().entrySet()) {
+            if (null == jsonObject.get(entry.getKey())) {
+                return null;
+            }
             convert(entry.getValue(), jsonObject.get(entry.getKey()), sql);
         }
 
@@ -370,13 +373,6 @@ public class TDengineSinkTask extends SinkTask {
                     .collect(Collectors.joining(stableScheme.getDelimiter())));
         } else {
             sql.settName(sql.getAll().get(stableScheme.getTableName()[0]));
-        }
-        if (null == sql.getCols()) {
-          return null;
-        }
-        long num = sql.getCols().entrySet().stream().filter(e -> e.getValue() != null).count();
-        if (num == 0) {
-          return null;
         }
         return sql;
     }
