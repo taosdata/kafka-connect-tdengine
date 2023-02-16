@@ -310,7 +310,10 @@ public class TDengineSinkTask extends SinkTask {
         Object obj = JSON.parse(recordString);
         if (obj instanceof JSONObject) {
             JSONObject jsonObject = (JSONObject) obj;
-            return Collections.singletonList(convertJSONObject(schema, jsonObject));
+            JsonSql jsonSql = convertJSONObject(schema, jsonObject);
+            if (null != jsonSql) {
+                return Collections.singletonList(convertJSONObject(schema, jsonObject));
+            }
         } else if (obj instanceof JSONArray) {
             JSONArray jsonArray = (JSONArray) obj;
             List<JsonSql> jsonSqlList = new ArrayList<>();
@@ -362,9 +365,6 @@ public class TDengineSinkTask extends SinkTask {
             throw new RecordException(msg);
         }
         for (Map.Entry<String, Index> entry : stableScheme.getIndexMap().entrySet()) {
-            if (null == jsonObject.get(entry.getKey())) {
-                return null;
-            }
             convert(entry.getValue(), jsonObject.get(entry.getKey()), sql);
         }
 
@@ -373,6 +373,10 @@ public class TDengineSinkTask extends SinkTask {
                     .collect(Collectors.joining(stableScheme.getDelimiter())));
         } else {
             sql.settName(sql.getAll().get(stableScheme.getTableName()[0]));
+        }
+        // Except for the ts column, if there is no other column, it is not inserted
+        if (sql.getCols().size() == 1) {
+            return null;
         }
         return sql;
     }
