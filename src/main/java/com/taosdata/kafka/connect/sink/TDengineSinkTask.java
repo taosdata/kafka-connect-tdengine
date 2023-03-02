@@ -89,7 +89,7 @@ public class TDengineSinkTask extends SinkTask {
             throw new ConfigException(String.format("JSON schema configuration can not get for path: %s with type %s. error '%s'",
                     schemaLocation, schemaType, e));
         }
-        log.error("schema type: {}, task schema content: {}.", schemaType, schemaStr1);
+        log.info("schema type: {}, task schema content: {}.", schemaType, schemaStr1);
 
 
         String schemaStr = map.get(SCHEMA_STRING);
