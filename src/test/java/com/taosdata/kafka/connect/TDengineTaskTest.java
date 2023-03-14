@@ -61,7 +61,6 @@ class TDengineTaskTest {
 
         SourceTaskContext context = new SourceTaskContext() {
 
-            @Override
             public Map<String, String> configs() {
                 return null;
             }
@@ -140,7 +139,6 @@ class TDengineTaskTest {
 
     private SinkTaskContext getSinkTaskContext() {
         return new SinkTaskContext() {
-            @Override
             public Map<String, String> configs() {
                 return null;
             }

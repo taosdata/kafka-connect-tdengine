@@ -6,27 +6,27 @@ import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
+import com.moon.runner.RunnerUtil;
 import com.taosdata.jdbc.TSDBDriver;
+import com.taosdata.jdbc.utils.StringUtils;
 import com.taosdata.kafka.connect.db.CacheProcessor;
 import com.taosdata.kafka.connect.db.ConnectionProvider;
 import com.taosdata.kafka.connect.db.Processor;
 import com.taosdata.kafka.connect.db.TSDBConnectionProvider;
 import com.taosdata.kafka.connect.exception.RecordException;
 import com.taosdata.kafka.connect.exception.SchemaException;
+import com.taosdata.kafka.connect.util.MatchKeyUtil;
 import com.taosdata.kafka.connect.util.VersionUtils;
-import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.errors.RetriableException;
-import org.apache.kafka.connect.sink.ErrantRecordReporter;
 import org.apache.kafka.connect.sink.SinkRecord;
 import org.apache.kafka.connect.sink.SinkTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.net.URL;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static com.taosdata.kafka.connect.sink.JSONUtils.*;
@@ -40,7 +40,7 @@ public class TDengineSinkTask extends SinkTask {
 
     private SinkConfig config;
     private Processor writer;
-    ErrantRecordReporter reporter;
+    // ErrantRecordReporter reporter;
     private int remainingRetries;
     Map<String, Schema> topics = Maps.newHashMap();
 
@@ -49,48 +49,6 @@ public class TDengineSinkTask extends SinkTask {
         log.info("Starting TDengine Sink task...");
         config = new SinkConfig(map);
         initTask();
-
-        String schemaStr1 = null;
-        String schemaLocation = config.getSchemaLocation();
-        String schemaType = config.getSchemaType();
-        try {
-            if (SCHEMA_TYPE_LOCAL.equals(schemaType)) {
-                StringBuilder sb = new StringBuilder();
-                try (BufferedReader reader = new BufferedReader(new FileReader(schemaLocation))) {
-                    String str;
-                    while ((str = reader.readLine()) != null) {
-                        sb.append(str);
-                    }
-                }
-                schemaStr1 = sb.toString();
-            } else {
-                InputStream in = null;
-                ByteArrayOutputStream outputStream = null;
-                try {
-                    URL url = new URL(schemaLocation);
-                    in = url.openStream();
-                    outputStream = new ByteArrayOutputStream();
-                    byte[] b = new byte[1024];
-                    int n;
-                    while ((n = in.read(b)) > 0) {
-                        outputStream.write(b, 0, n);
-                    }
-                    outputStream.flush();
-                    outputStream.toByteArray();
-                    schemaStr1 = outputStream.toString();
-                } finally {
-                    if (outputStream != null)
-                        outputStream.close();
-                    if (in != null)
-                        in.close();
-                }
-            }
-        } catch (IOException e) {
-            throw new ConfigException(String.format("JSON schema configuration can not get for path: %s with type %s. error '%s'",
-                    schemaLocation, schemaType, e));
-        }
-        log.info("schema type: {}, task schema content: {}.", schemaType, schemaStr1);
-
 
         String schemaStr = map.get(SCHEMA_STRING);
         JSONObject jsonObject = JSON.parseObject(schemaStr);
@@ -125,6 +83,26 @@ public class TDengineSinkTask extends SinkTask {
                         schema.setDefaultStable(getString(entry.getValue()));
                         break;
                     }
+                    case SCHEMA_STABLES_CONDITION: {
+                        try {
+                            JSONObject conditionObject =
+                                    JSON.parseObject(String.valueOf(entry.getValue()));
+                            Map<String, StableCondition> conditionMap = new HashMap<>();
+                            for (Map.Entry<String, Object> conditionEntry :
+                                    conditionObject.entrySet()) {
+                                JSONObject condition =
+                                        JSON.parseObject(conditionEntry.getValue().toString());
+                                conditionMap.put(conditionEntry.getKey(),
+                                        new StableCondition(condition.getString("key"),
+                                                condition.getString("cmp"),
+                                                condition.get("value")));
+                            }
+                            schema.setCondition(conditionMap);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        break;
+                    }
                     case SCHEMA_STABLES: {
                         JSONObject stableObject = (JSONObject) JSON.toJSON(entry.getValue());
                         for (String stName : stableObject.keySet()) {
@@ -146,6 +124,10 @@ public class TDengineSinkTask extends SinkTask {
                                     }
                                     case SCHEMA_DELIMITER: {
                                         stableSchema.setDelimiter(getString(tableEntry.getValue()));
+                                        break;
+                                    }
+                                    case SCHEMA_STABLES_FILTER: {
+                                        stableSchema.setFilters(JSON.parseArray(getString(tableEntry.getValue())).toJavaList(String.class));
                                         break;
                                     }
                                     default: {
@@ -179,7 +161,7 @@ public class TDengineSinkTask extends SinkTask {
                     }
                 }
             }
-            if (null == schema.getStableName() && null == schema.getDefaultStable()) {
+            if (null == schema.getStableName() && null == schema.getDefaultStable() && null == schema.getCondition()) {
                 throw new SchemaException(String.format("schema: %s. %s and %s cannot be both empty ",
                         JSON.toJSONString(schema), SCHEMA_STABLE_NAME, SCHEMA_STABLE_NAME_DEFAULT));
             }
@@ -202,11 +184,11 @@ public class TDengineSinkTask extends SinkTask {
             topics.put(entry.getKey(), schemas.get(v));
         }
 
-        try {
-            reporter = context.errantRecordReporter();
-        } catch (NoSuchMethodError | NoClassDefFoundError e) {
-            reporter = null;
-        }
+        // try {
+        //     reporter = context.errantRecordReporter();
+        // } catch (NoSuchMethodError | NoClassDefFoundError e) {
+        //     reporter = null;
+        // }
         // There will be a retry at the end
         remainingRetries = config.getMaxRetries() - 1;
         log.debug("Started TDengine sink task");
@@ -277,7 +259,7 @@ public class TDengineSinkTask extends SinkTask {
                     value = schemaHandler(schema, recordString);
                 } catch (RecordException | JSONException e) {
                     log.error(String.valueOf(e));
-                    reporter.report(record, e);
+                    // reporter.report(record, e);
                     continue;
                 }
                 values.addAll(value);
@@ -293,12 +275,12 @@ public class TDengineSinkTask extends SinkTask {
                 context.timeout(config.getRetryBackoffMs());
                 throw new RetriableException(e);
             } else {
-                if (reporter != null) {
-                    unrollAndRetry(batch);
-                } else {
-                    log.error("Failing task after exhausting retries; " + "encountered exceptions on last write attempt. " + "For complete details on each exception, please enable DEBUG logging.");
-                    throw new ConnectException(e);
-                }
+                // if (reporter != null) {
+                //     unrollAndRetry(batch);
+                // } else {
+                log.error("Failing task after exhausting retries; " + "encountered exceptions on last write attempt. " + "For complete details on each exception, please enable DEBUG logging.");
+                throw new ConnectException(e);
+                // }
             }
         }
     }
@@ -312,7 +294,7 @@ public class TDengineSinkTask extends SinkTask {
             JSONObject jsonObject = (JSONObject) obj;
             JsonSql jsonSql = convertJSONObject(schema, jsonObject);
             if (null != jsonSql) {
-                return Collections.singletonList(convertJSONObject(schema, jsonObject));
+                return Collections.singletonList(jsonSql);
             }
         } else if (obj instanceof JSONArray) {
             JSONArray jsonArray = (JSONArray) obj;
@@ -334,42 +316,83 @@ public class TDengineSinkTask extends SinkTask {
 
         String stableName = schema.getStableName();
         String defaultStable = schema.getDefaultStable();
-        String name;
-        if (!Strings.isNullOrEmpty(stableName)) {
-            String[] split = stableName.split(Schema.SEPARATOR);
-            String s = findValue(split, jsonObject);
-            if (s != null) {
-                name = s;
+        AtomicReference<String> name = new AtomicReference<>();
+
+        if (null != schema.getCondition()) {
+            schema.getCondition().forEach((stb, condition) -> {
+                switch (condition.getCmp()) {
+                    case "=":
+                        if (condition.getValue().equals(jsonObject.get(condition.getKey()))) {
+                            name.set(stb);
+                        }
+                        break;
+                    case "<>":
+                        if (!condition.getValue().equals(jsonObject.get(condition.getKey()))) {
+                            name.set(stb);
+                        }
+                        break;
+                    case "in":
+                        Object v = jsonObject.getString(condition.getKey());
+                        if (StringUtils.isNumeric(jsonObject.getString(condition.getKey()))) {
+                            v = Integer.parseInt((String) v);
+                        }
+                        if (((JSONArray) condition.getValue()).indexOf(v) > -1) {
+                            name.set(stb);
+                        }
+                        break;
+                }
+            });
+        } else {
+            if (!Strings.isNullOrEmpty(stableName)) {
+                String[] split = stableName.split(Schema.SEPARATOR);
+                String s = findValue(split, jsonObject);
+                if (s != null) {
+                    name.set(s);
+                } else {
+                    if (Strings.isNullOrEmpty(defaultStable)) {
+                        String msg = String.format("record : %s could not be found a suitable configuration in schema: %s."
+                                , JSON.toJSONString(jsonObject), schema.getName());
+                        throw new RecordException(msg);
+                    }
+                    name.set(defaultStable);
+                }
             } else {
                 if (Strings.isNullOrEmpty(defaultStable)) {
                     String msg = String.format("record : %s could not be found a suitable configuration in schema: %s."
                             , JSON.toJSONString(jsonObject), schema.getName());
                     throw new RecordException(msg);
                 }
-                name = defaultStable;
+                name.set(defaultStable);
             }
-        } else {
-            if (Strings.isNullOrEmpty(defaultStable)) {
-                String msg = String.format("record : %s could not be found a suitable configuration in schema: %s."
-                        , JSON.toJSONString(jsonObject), schema.getName());
-                throw new RecordException(msg);
-            }
-            name = defaultStable;
         }
-        sql.setStName(name);
+        sql.setStName(name.get());
 
-        StableSchema stableScheme = schema.getStableSchemaMap().get(name);
+        StableSchema stableScheme = schema.getStableSchemaMap().get(name.toString());
         if (null == stableScheme) {
             String msg = String.format("record : %s could not be found a suitable configuration in schema: %s."
                     , JSON.toJSONString(jsonObject), schema.getName());
             throw new RecordException(msg);
         }
         for (Map.Entry<String, Index> entry : stableScheme.getIndexMap().entrySet()) {
-            convert(entry.getValue(), jsonObject.get(entry.getKey()), sql);
+            if (jsonObject.get(entry.getKey()) instanceof JSONArray) {
+                if (0 == ((JSONArray) (jsonObject.get(entry.getKey()))).size()) {
+                    return null;
+                }
+                int i = ((JSONArray) (jsonObject.get(entry.getKey()))).size() - 1;
+                convert(entry.getValue(), ((JSONArray) (jsonObject.get(entry.getKey()))).get(i),
+                        sql);
+            } else {
+                convert(entry.getValue(), jsonObject.get(entry.getKey()), sql);
+            }
         }
 
         if (stableScheme.getDelimiter() != null) {
-            sql.settName(Arrays.stream(stableScheme.getTableName()).map(c -> sql.getAll().get(c))
+            sql.settName(Arrays.stream(stableScheme.getTableName()).map(c -> {
+                        if (null != sql.getAll().get(c)) {
+                            return sql.getAll().get(c);
+                        }
+                        return c;
+                    })
                     .collect(Collectors.joining(stableScheme.getDelimiter())));
         } else {
             sql.settName(sql.getAll().get(stableScheme.getTableName()[0]));
@@ -377,6 +400,17 @@ public class TDengineSinkTask extends SinkTask {
         // Except for the ts column, if there is no other column, it is not inserted
         if (sql.getCols().size() == 1) {
             return null;
+        }
+        if (null != stableScheme.getFilters() && stableScheme.getFilters().size() > 0) {
+            for (String filter : stableScheme.getFilters()) {
+                try {
+                    if (!(Boolean) RunnerUtil.run(MatchKeyUtil.replaceKey(filter, sql.getAll()))) {
+                        return null;
+                    }
+                } catch (Exception e) {
+                    log.error("record: {}, matchKey: {}", jsonObject, MatchKeyUtil.replaceKey(filter, sql.getAll()));
+                }
+            }
         }
         return sql;
     }
@@ -441,6 +475,9 @@ public class TDengineSinkTask extends SinkTask {
 
     private String checkAndConvertString(Object o) {
         if (o == null) return null;
+        if (StringUtils.isNumeric(String.valueOf(o))) {
+            return String.valueOf(o);
+        }
         if (o instanceof String) return "'" + o + "'";
         return String.valueOf(o);
     }
@@ -450,14 +487,15 @@ public class TDengineSinkTask extends SinkTask {
             return;
 
         String sql = convertSql(values);
+        log.info(sql);
         writer.execute(sql);
     }
 
     private String convertSql(List<JsonSql> jsons) {
-
         StringBuilder sb = new StringBuilder("insert into ");
         for (JsonSql json : jsons) {
-            sb.append("`").append(json.gettName()).append("`");
+            String tbName = json.gettName().replaceAll("\\.", "@");
+            sb.append("`").append(tbName).append("`");
             sb.append(" using ").append(json.getStName()).append(" (");
             StringBuilder tv = new StringBuilder(" tags (");
             int i = 0;
@@ -479,7 +517,9 @@ public class TDengineSinkTask extends SinkTask {
             i = 0;
             for (Map.Entry<String, String> entry : json.getCols().entrySet()) {
                 sb.append(entry.getKey());
-                cv.append(entry.getValue());
+                String v = entry.getValue();
+                cv.append(v);
+
                 if (i == json.getCols().size() - 1) {
                     sb.append(") ");
                     cv.append(") ");
@@ -501,7 +541,8 @@ public class TDengineSinkTask extends SinkTask {
 
                 executSql(value);
             } catch (Exception e) {
-                reporter.report(record, e);
+                log.info("record: {}, e: {}");
+                // reporter.report(record, e);
             }
         }
     }

@@ -18,7 +18,7 @@ public class JSONUtils {
                     JSON.toJSONString(schemaObject), SCHEMA_NAME));
         }
         String name = schemaObject.getString(SCHEMA_NAME);
-        if (!schemaObject.containsKey(SCHEMA_STABLE_NAME_DEFAULT) && !schemaObject.containsKey(SCHEMA_STABLE_NAME)) {
+        if (!schemaObject.containsKey(SCHEMA_STABLE_NAME_DEFAULT) && !schemaObject.containsKey(SCHEMA_STABLE_NAME) && !schemaObject.containsKey(SCHEMA_STABLES_CONDITION)) {
             throw new SchemaException(String.format("schema: %s cannot find stable name", name));
         }
     }

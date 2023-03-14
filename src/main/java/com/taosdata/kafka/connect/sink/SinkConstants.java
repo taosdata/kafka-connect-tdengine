@@ -16,6 +16,10 @@ public class SinkConstants {
 
     public static final String SCHEMA_STABLES = "stables";
 
+    public static final String SCHEMA_STABLES_CONDITION = "condition";
+
+    public static final String SCHEMA_STABLES_FILTER = "filters";
+
     public static final String SCHEMA_TABLE_NAME = "tableName";
 
     public static final String SCHEMA_DELIMITER = "delimiter";

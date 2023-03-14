@@ -2,6 +2,7 @@ package com.taosdata.kafka.connect.sink;
 
 import com.google.common.collect.Maps;
 
+import java.util.List;
 import java.util.Map;
 
 public class Schema {
@@ -11,6 +12,7 @@ public class Schema {
     private String database;
     private String stableName;
     private String defaultStable;
+    private Map<String, StableCondition> condition;
     private Map<String, StableSchema> stableSchemaMap = Maps.newHashMap();
 
     public String getName() {
@@ -43,6 +45,14 @@ public class Schema {
 
     public void setDefaultStable(String defaultStable) {
         this.defaultStable = defaultStable;
+    }
+
+    public Map<String, StableCondition> getCondition() {
+        return condition;
+    }
+
+    public void setCondition(Map<String, StableCondition> condition) {
+        this.condition = condition;
     }
 
     public Map<String, StableSchema> getStableSchemaMap() {

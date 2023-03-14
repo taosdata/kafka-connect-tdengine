@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableList;
 import com.taosdata.kafka.connect.util.VersionUtils;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
-import org.apache.kafka.common.utils.ByteBufferOutputStream;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.sink.SinkConnector;
 import org.slf4j.Logger;
@@ -17,8 +16,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static com.taosdata.kafka.connect.sink.SinkConfig.SCHEMA_LOCATION;
-import static com.taosdata.kafka.connect.sink.SinkConfig.SCHEMA_TYPE;
 import static com.taosdata.kafka.connect.sink.SinkConstants.SCHEMA_STRING;
 import static com.taosdata.kafka.connect.sink.SinkConstants.SCHEMA_TYPE_LOCAL;
 
@@ -75,7 +72,7 @@ public class TDengineSinkConnector extends SinkConnector {
             throw new ConfigException(String.format("JSON schema configuration can not get for path: %s with type %s. error '%s'",
                     schemaLocation, schemaType, e));
         }
-        log.error("schema type: {}, sink schema content: {}.", schemaType, schemaStr);
+        log.info("schema type: {}, sink schema content: {}.", schemaType, schemaStr);
         configProps = map;
         configProps.put(SCHEMA_STRING, schemaStr);
     }
