@@ -16,8 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static com.taosdata.kafka.connect.sink.SinkConstants.SCHEMA_STRING;
-import static com.taosdata.kafka.connect.sink.SinkConstants.SCHEMA_TYPE_LOCAL;
+import static com.taosdata.kafka.connect.sink.SinkConstants.*;
 
 /**
  * tdengine sink connection
@@ -46,6 +45,8 @@ public class TDengineSinkConnector extends SinkConnector {
                     }
                 }
                 schemaStr = sb.toString();
+            } else if (SCHEMA_TYPE_PARAM.equals(schemaType)) {
+                schemaStr = config.getSchemaConfigStr();
             } else {
                 InputStream in = null;
                 ByteArrayOutputStream outputStream = null;

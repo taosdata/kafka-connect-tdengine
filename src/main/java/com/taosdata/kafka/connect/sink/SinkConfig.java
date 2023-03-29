@@ -48,6 +48,9 @@ public class SinkConfig extends ConnectionConfig {
             "the default value is null, " +
             "this means the topic will be mapped to the new database which will have same name as the topic";
     private static final String CONNECTION_PREFIX_DISPLAY = "JDBC sink destination Database prefix";
+    private static final String SCHEMA_CONFIG = "schema.config";
+    private static final String SCHEMA_CONFIG_DOC = "Schema config";
+    private static final String SCHEMA_CONFIG_DISPLAY = "Schema config location";
 
     public static final String SCHEMA_LOCATION = "schema.location";
     private static final String SCHEMA_LOCATION_DOC =
@@ -65,6 +68,7 @@ public class SinkConfig extends ConnectionConfig {
     private final int batchSize;
     private final String charset;
     private final String connectionDatabasePrefix;
+    private final String schemaConfigStr;
     private final String schemaLocation;
     private final String schemaType;
 
@@ -76,6 +80,7 @@ public class SinkConfig extends ConnectionConfig {
         this.charset = getString(CHARSET_CONF);
         this.connectionDatabasePrefix = getString(CONNECTION_PREFIX_CONFIG).trim();
         this.schemaLocation = getString(SCHEMA_LOCATION).trim();
+        this.schemaConfigStr = getString(SCHEMA_CONFIG).trim();
         this.schemaType = getString(SCHEMA_TYPE).trim();
     }
 
@@ -150,6 +155,16 @@ public class SinkConfig extends ConnectionConfig {
                         SCHEMA_LOCATION_DISPLAY
                 )
                 .define(
+                        SCHEMA_CONFIG,
+                        ConfigDef.Type.STRING,
+                        ConfigDef.NO_DEFAULT_VALUE,
+                        ConfigDef.Importance.HIGH,
+                        SCHEMA_CONFIG_DOC,
+                        WRITES_GROUP,
+                        ++orderInGroup,
+                        ConfigDef.Width.LONG,
+                        SCHEMA_CONFIG_DISPLAY)
+                .define(
                         SCHEMA_TYPE,
                         ConfigDef.Type.STRING,
                         SCHEMA_TYPE_DEFAULT,
@@ -194,5 +209,9 @@ public class SinkConfig extends ConnectionConfig {
 
     public String getSchemaType() {
         return schemaType;
+    }
+
+    public String getSchemaConfigStr() {
+        return schemaConfigStr;
     }
 }
