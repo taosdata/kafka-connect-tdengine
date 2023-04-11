@@ -50,7 +50,7 @@ public class TDengineSinkTask extends SinkTask {
         config = new SinkConfig(map);
         initTask();
 
-        String schemaStr1 = null;
+        String schemaStr;
         String schemaLocation = config.getSchemaLocation();
         String schemaType = config.getSchemaType();
         try {
@@ -62,7 +62,7 @@ public class TDengineSinkTask extends SinkTask {
                         sb.append(str);
                     }
                 }
-                schemaStr1 = sb.toString();
+                schemaStr = sb.toString();
             } else {
                 InputStream in = null;
                 ByteArrayOutputStream outputStream = null;
@@ -77,7 +77,7 @@ public class TDengineSinkTask extends SinkTask {
                     }
                     outputStream.flush();
                     outputStream.toByteArray();
-                    schemaStr1 = outputStream.toString();
+                    schemaStr = outputStream.toString();
                 } finally {
                     if (outputStream != null)
                         outputStream.close();
@@ -89,10 +89,8 @@ public class TDengineSinkTask extends SinkTask {
             throw new ConfigException(String.format("JSON schema configuration can not get for path: %s with type %s. error '%s'",
                     schemaLocation, schemaType, e));
         }
-        log.info("schema type: {}, task schema content: {}.", schemaType, schemaStr1);
-
-
-        String schemaStr = map.get(SCHEMA_STRING);
+        log.info("schema type: {}, task schema content: {}.", schemaType, schemaStr);
+//        String schemaStr = map.get(SCHEMA_STRING);
         JSONObject jsonObject = JSON.parseObject(schemaStr);
 
         Map<String, Schema> schemas = Maps.newHashMap();
@@ -228,10 +226,8 @@ public class TDengineSinkTask extends SinkTask {
         }
         // do some debug log
         int size = records.size();
-        records.stream().findFirst().ifPresent(sinkRecord -> {
-            log.debug("Received {} records. First record kafka coordinates:({}-{}-{}). Writing them to the "
-                    + "database...", size, sinkRecord.topic(), sinkRecord.kafkaPartition(), sinkRecord.kafkaOffset());
-        });
+        records.stream().findFirst().ifPresent(sinkRecord -> log.debug("Received {} records. First record kafka coordinates:({}-{}-{}). Writing them to the "
+                + "database...", size, sinkRecord.topic(), sinkRecord.kafkaPartition(), sinkRecord.kafkaOffset()));
 
         List<SinkRecord> currentGroup = new ArrayList<>();
         int maxBatchSize = config.getBatchSize();
@@ -270,7 +266,7 @@ public class TDengineSinkTask extends SinkTask {
             List<JsonSql> values = new ArrayList<>();
             for (SinkRecord record : batch) {
 
-                List<JsonSql> value = null;
+                List<JsonSql> value;
                 String recordString = getString(record.value());
                 log.trace("raw record String: {}", recordString);
                 try {
@@ -282,7 +278,7 @@ public class TDengineSinkTask extends SinkTask {
                 }
                 values.addAll(value);
             }
-            executSql(values);
+            executeSql(values);
         } catch (Exception e) {
             log.warn("Write of {} records failed, remainingRetries={} ", batch.size(), remainingRetries, e);
             if (remainingRetries > 0) {
@@ -431,7 +427,7 @@ public class TDengineSinkTask extends SinkTask {
             if (jsonObject.containsKey(key)) {
                 JSONObject json = jsonObject.getJSONObject(key);
                 strings = Arrays.copyOfRange(strings, 1, strings.length);
-                findValue(strings, json);
+                return findValue(strings, json);
             }
         } catch (Exception e) {
             return null;
@@ -445,7 +441,7 @@ public class TDengineSinkTask extends SinkTask {
         return String.valueOf(o);
     }
 
-    private void executSql(List<JsonSql> values) throws SQLException {
+    private void executeSql(List<JsonSql> values) throws SQLException {
         if (values.isEmpty())
             return;
 
@@ -499,7 +495,7 @@ public class TDengineSinkTask extends SinkTask {
             try {
                 List<JsonSql> value = schemaHandler(topics.get(record.topic()), getString(record.value()));
 
-                executSql(value);
+                executeSql(value);
             } catch (Exception e) {
                 reporter.report(record, e);
             }
