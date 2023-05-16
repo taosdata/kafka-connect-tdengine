@@ -40,6 +40,7 @@ public class TableExecutor implements Comparable<TableExecutor> {
                          String format) throws SQLException {
         this.tableName = tableName;
         this.committedOffset = this.offset = TimeStampOffset.fromMap(offset);
+        log.debug("TableExecutor committed offset is : {}", this.offset.getTimestampOffset());
         this.partition = partition;
         this.start = startTime;
         this.lastUpdate = 0L;
@@ -59,7 +60,9 @@ public class TableExecutor implements Comparable<TableExecutor> {
     public void startQuery() throws SQLException, ConnectException {
         if (resultSet == null) {
             PreparedStatement stmt = mapper.getOrCreatePreparedStatement();
-            stmt.setTimestamp(1, null == offset.getTimestampOffset() ? start : offset.getTimestampOffset());
+            Timestamp startTime = null == offset.getTimestampOffset() ? start : offset.getTimestampOffset();
+            stmt.setTimestamp(1, startTime);
+            log.trace("startQuery from: {}", startTime);
             stmt.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
             resultSet = stmt.executeQuery();
             exhaustedResultRecord = false;

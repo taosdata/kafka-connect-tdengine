@@ -119,6 +119,8 @@ public class TDengineSourceTask extends SourceTask {
                 return null;
             } else {
                 consecutiveEmptyResults.put(executor, 0);
+                log.trace("Returning {} records for {}. last record time: {}",
+                        results.size(), executor.getTableName(), results.get(results.size() - 1).timestamp());
                 return results;
             }
 
