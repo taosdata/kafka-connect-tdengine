@@ -1,6 +1,8 @@
 package com.taosdata.kafka.connect.source;
 
 import com.taosdata.kafka.connect.config.ConnectionConfig;
+import com.taosdata.kafka.connect.config.QueryIntervalValidator;
+import com.taosdata.kafka.connect.config.TimestampInitialValidator;
 import org.apache.kafka.common.config.ConfigDef;
 
 import java.sql.Timestamp;
@@ -42,6 +44,12 @@ public class SourceConfig extends ConnectionConfig {
             "The timestamp used for initial queries. If not specified, all data will be retrieved.";
     public static final String TIMESTAMP_INITIAL_DISPLAY = "Unix time value of initial timestamp";
 
+    public static final String QUERY_INTERVAL_CONFIG = "query.interval.ms";
+    public static final Long QUERY_INTERVAL_DEFAULT = 0L;
+    public static final String QUERY_INTERVAL_DOC =
+            "The interval used for query data from TDengine. If not specified, all data will be retrieved.";
+    public static final String QUERY_INTERVAL_DISPLAY = "query interval from TDengine, unit: millisecond";
+
     public static final String FETCH_MAX_ROWS_CONFIG = "fetch.max.rows";
     public static final int FETCH_MAX_ROWS_DEFAULT = 100;
     private static final String FETCH_MAX_ROWS_DOC =
@@ -52,12 +60,19 @@ public class SourceConfig extends ConnectionConfig {
     public static final String TABLES_CONFIG = "tables";
     private static final String TABLES_DOC = "List of tables for this task to watch for changes.";
 
+    public static final String TOPIC_PER_SUPER_TABLE = "TopicPerSuperTable";
+    private static final boolean TOPIC_PER_SUPER_TABLE_DEFAULT = true;
+    private static final String TOPIC_PER_SUPER_TABLE_DOC = "Whether to create a topic for each super table, default is true";
+    private static final String TOPIC_PER_SUPER_TABLE_DISPLAY = "Topic for each Super Table";
+
     private final int pollInterval;
     //    private boolean monitorTables;
     private final String topicPrefix;
     private final Timestamp timestampInitial;
     private final int fetchMaxRows;
+    private long queryInterval = QUERY_INTERVAL_DEFAULT;  // default is null, which means query all data;
     private final List<String> tables;
+    private final boolean topicPerSuperTable;
 
     public SourceConfig(Map<?, ?> props) {
         super(config(), props);
@@ -71,8 +86,13 @@ public class SourceConfig extends ConnectionConfig {
         } else {
             this.timestampInitial = new Timestamp(0L);
         }
+        String interval = this.getString(QUERY_INTERVAL_CONFIG);
+        if (interval != null && interval.trim().length() > 0) {
+            this.queryInterval = Long.parseLong(interval);
+        }
         this.fetchMaxRows = this.getInt(FETCH_MAX_ROWS_CONFIG);
         this.tables = this.getList(TABLES_CONFIG);
+        this.topicPerSuperTable = this.getBoolean(TOPIC_PER_SUPER_TABLE);
     }
 
     public static ConfigDef config() {
@@ -116,6 +136,7 @@ public class SourceConfig extends ConnectionConfig {
                         TIMESTAMP_INITIAL_CONFIG,
                         ConfigDef.Type.STRING,
                         TIMESTAMP_INITIAL_DEFAULT,
+                        TimestampInitialValidator.INSTANCE,
                         ConfigDef.Importance.MEDIUM,
                         TIMESTAMP_INITIAL_DOC,
                         READ,
@@ -133,6 +154,28 @@ public class SourceConfig extends ConnectionConfig {
                         ++orderInGroup,
                         ConfigDef.Width.SHORT,
                         FETCH_MAX_ROWS_DISPLAY
+                )
+                .define(
+                        QUERY_INTERVAL_CONFIG,
+                        ConfigDef.Type.LONG,
+                        QUERY_INTERVAL_DEFAULT,
+                        QueryIntervalValidator.INSTANCE,
+                        ConfigDef.Importance.LOW,
+                        QUERY_INTERVAL_DOC,
+                        READ,
+                        ++orderInGroup,
+                        ConfigDef.Width.MEDIUM,
+                        QUERY_INTERVAL_DISPLAY)
+                .define(
+                        TOPIC_PER_SUPER_TABLE,
+                        ConfigDef.Type.BOOLEAN,
+                        TOPIC_PER_SUPER_TABLE_DEFAULT,
+                        ConfigDef.Importance.LOW,
+                        TOPIC_PER_SUPER_TABLE_DOC,
+                        READ,
+                        ++orderInGroup,
+                        ConfigDef.Width.SHORT,
+                        TOPIC_PER_SUPER_TABLE_DISPLAY
                 )
                 .define(
                         TABLES_CONFIG,
@@ -167,4 +210,11 @@ public class SourceConfig extends ConnectionConfig {
         return tables;
     }
 
+    public long getQueryInterval() {
+        return queryInterval;
+    }
+
+    public boolean isTopicPerSuperTable() {
+        return topicPerSuperTable;
+    }
 }

@@ -74,6 +74,7 @@ public class JsonMapper extends TableMapper {
             case "JSON":
                 return resultSet.getString(name);
             case "BINARY":
+            case "VARCHAR":
                 return resultSet.getBytes(name);
             default:
                 return null;
