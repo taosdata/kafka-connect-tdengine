@@ -94,13 +94,13 @@ public class TDengineSourceTask extends SourceTask {
         long now = this.time.milliseconds();
         long sleepMs = Math.min(nextUpdate - now, 1000);
         if (sleepMs > 0) {
-            log.trace("Waiting {} ms to poll {} next", nextUpdate - now, executor.getTableName());
+            log.debug("Waiting {} ms to poll {} next", nextUpdate - now, executor.getTableName());
             this.time.sleep(sleepMs);
         } else if (consecutiveEmptyResults.get(executor) > 0) {
             TimeUnit.MILLISECONDS.sleep(config.getPollInterval());
         }
 
-        log.trace("start poll new data from table: {}", executor.getTableName());
+        log.debug("start poll new data from table: {}", executor.getTableName());
         List<SourceRecord> results = new ArrayList<>();
         try {
             executor.startQuery();
@@ -124,7 +124,7 @@ public class TDengineSourceTask extends SourceTask {
 
             if (results.isEmpty()) {
                 consecutiveEmptyResults.compute(executor, (k, v) -> v + 1);
-                log.trace("No updates for {}", executor.getTableName());
+                log.debug("No updates for {}", executor.getTableName());
                 return null;
             } else {
                 consecutiveEmptyResults.put(executor, 0);

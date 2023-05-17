@@ -139,7 +139,7 @@ public class TableExecutor implements Comparable<TableExecutor> {
         if (nextRecord == null) {
             if (resultSet.next()) {
                 nextRecord = mapper.doExtractRecord(resultSet, partition);
-                log.trace("doExtractRecord, next: {}", nextRecord);
+                log.debug("doExtractRecord, next: {}", nextRecord);
             } else {
                 exhaustedResultRecord = true;
                 return false;
@@ -158,7 +158,7 @@ public class TableExecutor implements Comparable<TableExecutor> {
         }
         PendingRecord currentRecord = nextRecord;
         nextRecord = exhaustedResultRecord ? null : mapper.doExtractRecord(resultSet, partition);
-        log.trace("doExtractRecord, extractRecord: {}", nextRecord);
+        log.debug("doExtractRecord, extractRecord: {}", nextRecord);
         if (nextRecord == null
                 || canCommitTimestamp(currentRecord.timestamp(), nextRecord.timestamp())) {
             offset = new TimeStampOffset(currentRecord.timestamp());
