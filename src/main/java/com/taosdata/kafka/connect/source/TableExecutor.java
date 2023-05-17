@@ -63,7 +63,7 @@ public class TableExecutor implements Comparable<TableExecutor> {
             if (queryInterval == 0) {
                 Timestamp startTime = null == offset.getTimestampOffset() ? start : offset.getTimestampOffset();
                 stmt.setTimestamp(1, startTime);
-                log.trace("query start from: {}", startTime);
+                log.debug("query start from: {}", startTime);
                 stmt.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
             } else {
                 Timestamp startTime = latestQueryTime;
@@ -80,7 +80,8 @@ public class TableExecutor implements Comparable<TableExecutor> {
                     }
                 }
 
-                log.debug("query start from: {}", startTime);
+//                log.debug("query start from: {}", startTime);
+                log.info("query start from: {}", startTime);
                 stmt.setTimestamp(1, startTime);
                 long current = System.currentTimeMillis();
                 long end = startTime.getTime() + queryInterval;
@@ -89,7 +90,8 @@ public class TableExecutor implements Comparable<TableExecutor> {
                 }
                 Timestamp endTime = new Timestamp(end);
 
-                log.debug("query end with: {}", endTime);
+//                log.debug("query end with: {}", endTime);
+                log.info("query end with: {}", endTime);
                 stmt.setTimestamp(2, endTime);
                 latestQueryTime = endTime;
             }
