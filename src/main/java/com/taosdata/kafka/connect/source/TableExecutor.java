@@ -73,7 +73,8 @@ public class TableExecutor implements Comparable<TableExecutor> {
                     if (startTime.getTime() == 0) {
                         try (ResultSet rs = stmt.executeQuery("select first(_c0) from " + tableName)) {
                             if (rs.next()) {
-                                startTime = rs.getTimestamp(1);
+                                Timestamp tmp = rs.getTimestamp(1);
+                                startTime = new Timestamp(tmp.getTime() - 1);
                             }
                         }
                     }
