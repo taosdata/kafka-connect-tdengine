@@ -47,7 +47,7 @@ public class SourceConfig extends ConnectionConfig {
     public static final String QUERY_INTERVAL_CONFIG = "query.interval.ms";
     public static final Long QUERY_INTERVAL_DEFAULT = 0L;
     public static final String QUERY_INTERVAL_DOC =
-            "The interval used for query data from TDengine. If not specified, all data will be retrieved.";
+            "The interval used for query data from TDengine. If not specified or set to 0, all data will be retrieved.";
     public static final String QUERY_INTERVAL_DISPLAY = "query interval from TDengine, unit: millisecond";
 
     public static final String FETCH_MAX_ROWS_CONFIG = "fetch.max.rows";
@@ -86,10 +86,7 @@ public class SourceConfig extends ConnectionConfig {
         } else {
             this.timestampInitial = new Timestamp(0L);
         }
-        String interval = this.getString(QUERY_INTERVAL_CONFIG);
-        if (interval != null && interval.trim().length() > 0) {
-            this.queryInterval = Long.parseLong(interval);
-        }
+        this.queryInterval = this.getLong(QUERY_INTERVAL_CONFIG);
         this.fetchMaxRows = this.getInt(FETCH_MAX_ROWS_CONFIG);
         this.tables = this.getList(TABLES_CONFIG);
         this.topicPerSuperTable = this.getBoolean(TOPIC_PER_SUPER_TABLE);

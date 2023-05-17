@@ -11,8 +11,8 @@ public class QueryIntervalValidator implements ConfigDef.Validator {
     public void ensureValid(String s, Object o) {
         if (null != o) {
             long queryInterval = Long.parseLong(String.valueOf(o));
-            if (queryInterval < 1) {
-                throw new ConfigException(s, o, "query interval must be greater than 0");
+            if (queryInterval > 1000 * 60 * 60 * 24 * 31L) {
+                throw new ConfigException(s, o, "query interval must not be greater than 1 month");
             }
         }
     }
