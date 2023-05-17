@@ -68,6 +68,7 @@ public class TDengineSourceTask extends SourceTask {
                     } else {
                         topicName = config.getTopicPrefix() + "_" + dbName;
                     }
+                    log.debug("start poll data from db {} table: {}, to topic: {}", dbName, table, topicName);
                     executor = new TableExecutor(table, topicName, offset, processor, config.getFetchMaxRows(),
                             partition, config.getTimestampInitial(),
                             convert, config.getQueryInterval());
