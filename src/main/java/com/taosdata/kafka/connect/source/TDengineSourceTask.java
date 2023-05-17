@@ -64,9 +64,9 @@ public class TDengineSourceTask extends SourceTask {
                     String topicName;
                     String dbName = config.getConnectionDb();
                     if (config.isTopicPerSuperTable()) {
-                        topicName = config.getTopicPrefix() + "_" + dbName + "_" + table;
+                        topicName = config.getTopicPrefix() + "-" + dbName + "-" + table;
                     } else {
-                        topicName = config.getTopicPrefix() + "_" + dbName;
+                        topicName = config.getTopicPrefix() + "-" + dbName;
                     }
                     log.debug("start poll data from db {} table: {}, to topic: {}", dbName, table, topicName);
                     executor = new TableExecutor(table, topicName, offset, processor, config.getFetchMaxRows(),

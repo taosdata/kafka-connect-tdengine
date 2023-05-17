@@ -60,7 +60,7 @@ public class SourceConfig extends ConnectionConfig {
     public static final String TABLES_CONFIG = "tables";
     private static final String TABLES_DOC = "List of tables for this task to watch for changes.";
 
-    public static final String TOPIC_PER_SUPER_TABLE = "TopicPerSuperTable";
+    public static final String TOPIC_PER_SUPER_TABLE = "topic.per.stable";
     private static final boolean TOPIC_PER_SUPER_TABLE_DEFAULT = true;
     private static final String TOPIC_PER_SUPER_TABLE_DOC = "Whether to create a topic for each super table, default is true";
     private static final String TOPIC_PER_SUPER_TABLE_DISPLAY = "Topic for each Super Table";
