@@ -25,7 +25,7 @@ public class LineMapper extends TableMapper {
         StringBuilder sb = new StringBuilder(tableName);
         Timestamp ts = null;
         try {
-            if (tags.size() > 0) {
+            if (!tags.isEmpty()) {
                 for (String tag : tags) {
                     String value = columnType.get(tag);
                     switch (value) {
@@ -48,6 +48,7 @@ public class LineMapper extends TableMapper {
                             sb.append(",").append(tag).append("=").append(resultSet.getDouble(tag));
                             break;
                         case "BINARY":
+                        case "VARCHAR":
                             sb.append(",").append(tag).append("=\"").append(resultSet.getString(tag)).append("\"");
                             break;
                         case "BOOL":

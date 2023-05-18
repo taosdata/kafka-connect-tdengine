@@ -51,7 +51,7 @@ public abstract class TableMapper {
         getMetaSchema();
         try {
             preparedStatement = connection.prepareStatement(
-                    "select * from `" + tableName + "` where _c0 > ? and _c0 <= ? ");
+                    "select * from `" + tableName + "` where _c0 > ? and _c0 <= ? order by _c0 asc");
             if (batchMaxRows > 0) {
                 preparedStatement.setFetchSize(batchMaxRows);
             }

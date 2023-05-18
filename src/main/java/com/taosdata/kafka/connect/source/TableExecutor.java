@@ -6,10 +6,7 @@ import org.apache.kafka.connect.source.SourceRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.util.Map;
 
 public class TableExecutor implements Comparable<TableExecutor> {
@@ -20,6 +17,7 @@ public class TableExecutor implements Comparable<TableExecutor> {
 
     private TimeStampOffset committedOffset;
     private TimeStampOffset offset;
+    private Timestamp latestQueryTime;
 
     private ResultSet resultSet;
 
@@ -29,6 +27,7 @@ public class TableExecutor implements Comparable<TableExecutor> {
 
     private final TableMapper mapper;
     private long lastUpdate;
+    private final long queryInterval;
 
     public TableExecutor(String tableName,
                          String topic,
@@ -37,9 +36,11 @@ public class TableExecutor implements Comparable<TableExecutor> {
                          int batchMaxRows,
                          Map<String, String> partition,
                          Timestamp startTime,
-                         String format) throws SQLException {
+                         String format, long queryInterval) throws SQLException {
+        this.queryInterval = queryInterval;
         this.tableName = tableName;
         this.committedOffset = this.offset = TimeStampOffset.fromMap(offset);
+        log.debug("TableExecutor committed offset is : {}", this.offset.getTimestampOffset());
         this.partition = partition;
         this.start = startTime;
         this.lastUpdate = 0L;
@@ -59,9 +60,42 @@ public class TableExecutor implements Comparable<TableExecutor> {
     public void startQuery() throws SQLException, ConnectException {
         if (resultSet == null) {
             PreparedStatement stmt = mapper.getOrCreatePreparedStatement();
-            stmt.setTimestamp(1, null == offset.getTimestampOffset() ? start : offset.getTimestampOffset());
-            stmt.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
-            resultSet = stmt.executeQuery();
+            if (queryInterval == 0) {
+                Timestamp startTime = null == offset.getTimestampOffset() ? start : offset.getTimestampOffset();
+                stmt.setTimestamp(1, startTime);
+                log.debug("query start from: {}", startTime);
+                stmt.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
+            } else {
+                Timestamp startTime = latestQueryTime;
+                if (startTime == null) {
+                    startTime = null == offset.getTimestampOffset() ? start : offset.getTimestampOffset();
+
+                    if (startTime.getTime() == 0) {
+                        try (ResultSet rs = stmt.executeQuery("select first(_c0) from " + tableName)) {
+                            if (rs.next()) {
+                                Timestamp tmp = rs.getTimestamp(1);
+                                startTime = new Timestamp(tmp.getTime() - 1);
+                            }
+                        }
+                    }
+                }
+
+//                log.debug("query start from: {}", startTime);
+                log.info("query start from: {}", startTime);
+                stmt.setTimestamp(1, startTime);
+                long current = System.currentTimeMillis();
+                long end = startTime.getTime() + queryInterval;
+                if (current < end) {
+                    end = current;
+                }
+                Timestamp endTime = new Timestamp(end);
+
+//                log.debug("query end with: {}", endTime);
+                log.info("query end with: {}", endTime);
+                stmt.setTimestamp(2, endTime);
+                latestQueryTime = endTime;
+            }
+            this.resultSet = stmt.executeQuery();
             exhaustedResultRecord = false;
         }
         this.committedOffset = this.offset;
@@ -93,6 +127,10 @@ public class TableExecutor implements Comparable<TableExecutor> {
         resultSet = null;
     }
 
+    public void clearLatestQuery() {
+        this.latestQueryTime = null;
+    }
+
     public boolean next() throws SQLException {
         if (exhaustedResultRecord && nextRecord == null) {
             return false;
@@ -101,6 +139,7 @@ public class TableExecutor implements Comparable<TableExecutor> {
         if (nextRecord == null) {
             if (resultSet.next()) {
                 nextRecord = mapper.doExtractRecord(resultSet, partition);
+                log.debug("doExtractRecord, next: {}", nextRecord);
             } else {
                 exhaustedResultRecord = true;
                 return false;
@@ -119,6 +158,7 @@ public class TableExecutor implements Comparable<TableExecutor> {
         }
         PendingRecord currentRecord = nextRecord;
         nextRecord = exhaustedResultRecord ? null : mapper.doExtractRecord(resultSet, partition);
+        log.debug("doExtractRecord, extractRecord: {}", nextRecord);
         if (nextRecord == null
                 || canCommitTimestamp(currentRecord.timestamp(), nextRecord.timestamp())) {
             offset = new TimeStampOffset(currentRecord.timestamp());
