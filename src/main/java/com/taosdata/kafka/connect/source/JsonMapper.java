@@ -43,8 +43,10 @@ public class JsonMapper extends TableMapper {
                 Struct valueStruct = new Struct(value)
                         .put("metric", column)
                         .put("timestamp", result)
-                        .put("value", getValue(resultSet, column, columnType.get(column)))
-                        .put("tags", tagStruct);
+                        .put("value", getValue(resultSet, column, columnType.get(column)));
+                if (!tags.isEmpty()) {
+                    valueStruct.put("tags", tagStruct);
+                }
                 structs.add(valueStruct);
             }
         } catch (SQLException e) {
@@ -74,6 +76,7 @@ public class JsonMapper extends TableMapper {
             case "JSON":
                 return resultSet.getString(name);
             case "BINARY":
+            case "VARCHAR":
                 return resultSet.getBytes(name);
             default:
                 return null;

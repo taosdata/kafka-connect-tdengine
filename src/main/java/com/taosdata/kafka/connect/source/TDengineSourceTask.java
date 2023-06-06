@@ -54,16 +54,24 @@ public class TDengineSourceTask extends SourceTask {
         processor.setDbName(config.getConnectionDb());
 
         List<String> tables = config.getTables();
-        if (null != tables && tables.size() > 0) {
+        if (null != tables && !tables.isEmpty()) {
             for (String table : tables) {
                 Map<String, String> partition = Collections.singletonMap(SourceConstants.TABLE_NAME_KEY, table);
                 OffsetStorageReader offsetStorageReader = context.offsetStorageReader();
                 Map<String, Object> offset = offsetStorageReader.offset(partition);
                 TableExecutor executor;
                 try {
-                    executor = new TableExecutor(table, config.getTopicPrefix() + config.getConnectionDb(),
-                            offset, processor, config.getFetchMaxRows(), partition, config.getTimestampInitial(),
-                            convert);
+                    String topicName;
+                    String dbName = config.getConnectionDb();
+                    if (config.isTopicPerSuperTable()) {
+                        topicName = config.getTopicPrefix() + "-" + dbName + "-" + table;
+                    } else {
+                        topicName = config.getTopicPrefix() + "-" + dbName;
+                    }
+                    log.debug("start poll data from db {} table: {}, to topic: {}", dbName, table, topicName);
+                    executor = new TableExecutor(table, topicName, offset, processor, config.getFetchMaxRows(),
+                            partition, config.getTimestampInitial(),
+                            convert, config.getQueryInterval());
                 } catch (SQLException e) {
                     log.error("error occur", e);
                     throw new ConnectException(e);
@@ -86,13 +94,13 @@ public class TDengineSourceTask extends SourceTask {
         long now = this.time.milliseconds();
         long sleepMs = Math.min(nextUpdate - now, 1000);
         if (sleepMs > 0) {
-            log.trace("Waiting {} ms to poll {} next", nextUpdate - now, executor.getTableName());
+            log.debug("Waiting {} ms to poll {} next", nextUpdate - now, executor.getTableName());
             this.time.sleep(sleepMs);
         } else if (consecutiveEmptyResults.get(executor) > 0) {
             TimeUnit.MILLISECONDS.sleep(config.getPollInterval());
         }
 
-        log.trace("start poll new data from table:" + executor.getTableName());
+        log.debug("start poll new data from table: {}", executor.getTableName());
         List<SourceRecord> results = new ArrayList<>();
         try {
             executor.startQuery();
@@ -100,6 +108,7 @@ public class TDengineSourceTask extends SourceTask {
             int batchMaxRows = config.getFetchMaxRows();
             boolean hadNext = true;
             while (results.size() < batchMaxRows && (hadNext = executor.next())) {
+                executor.clearLatestQuery();
                 SourceRecord record = executor.extractRecord();
                 if (record.value() instanceof List) {
                     for (Struct struct : (List<Struct>) record.value()) {
@@ -115,10 +124,12 @@ public class TDengineSourceTask extends SourceTask {
 
             if (results.isEmpty()) {
                 consecutiveEmptyResults.compute(executor, (k, v) -> v + 1);
-                log.trace("No updates for {}", executor.getTableName());
+                log.debug("No updates for {}", executor.getTableName());
                 return null;
             } else {
                 consecutiveEmptyResults.put(executor, 0);
+                log.debug("Returning {} records for {}. last record time: {}",
+                        results.size(), executor.getTableName(), results.get(results.size() - 1).timestamp());
                 return results;
             }
 

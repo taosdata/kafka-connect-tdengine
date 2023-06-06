@@ -46,4 +46,17 @@ public class PendingRecord {
                 partition, offset.toMap(), topic, valueSchema, value
         );
     }
+
+    @Override
+    public String toString() {
+        StringBuilder partitionStr = new StringBuilder();
+        for (Map.Entry<String, String> entry : partition.entrySet()) {
+            partitionStr.append(entry.getKey()).append("=").append(entry.getValue()).append(",");
+        }
+        return "PendingRecord{" + "timestamp=" + timestamp +
+                ", partition=" + partitionStr +
+                ", topic='" + topic + '\'' +
+                ", value=" + value +
+                '}';
+    }
 }

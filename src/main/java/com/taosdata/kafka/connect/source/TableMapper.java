@@ -14,6 +14,7 @@ import java.sql.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * tableName timestampColumn columns tags
@@ -51,7 +52,7 @@ public abstract class TableMapper {
         getMetaSchema();
         try {
             preparedStatement = connection.prepareStatement(
-                    "select * from `" + tableName + "` where _c0 > ? and _c0 <= ? ");
+                    "select * from `" + tableName + "` where _c0 > ? and _c0 <= ? order by _c0 asc");
             if (batchMaxRows > 0) {
                 preparedStatement.setFetchSize(batchMaxRows);
             }
@@ -80,12 +81,14 @@ public abstract class TableMapper {
                     tagBuilder.field(tag, convertType(columnType.get(tag)));
                 }
                 for (String column : columns) {
-                    Schema field = SchemaBuilder.struct()
+                    SchemaBuilder sb = SchemaBuilder.struct()
                             .field("metric", Schema.OPTIONAL_STRING_SCHEMA)
                             .field("timestamp", Schema.OPTIONAL_INT64_SCHEMA)
-                            .field("value", convertType(columnType.get(column)))
-                            .field("tags", tagBuilder.build())
-                            .build();
+                            .field("value", convertType(columnType.get(column)));
+                    if (!tags.isEmpty()) {
+                        sb.field("tags", tagBuilder.build());
+                    }
+                    Schema field = sb.build();
                     valueBuilder.put(column, field);
                 }
             }
@@ -152,6 +155,7 @@ public abstract class TableMapper {
             case "JSON":
                 return Schema.OPTIONAL_STRING_SCHEMA;
             case "BINARY":
+            case "VARCHAR":
                 return Schema.OPTIONAL_BYTES_SCHEMA;
             default:
                 return null;

@@ -90,16 +90,14 @@ public class MonitorThread extends Thread {
     private synchronized boolean isTableChange() {
         Set<String> set = new HashSet<>();
         try (Statement statement = connection.createStatement()) {
-            statement.execute(SQLUtils.useTableSql(config.getConnectionDb()));
-            ResultSet resultSet = statement.executeQuery(SQLUtils.showSTableSql());
+            String dbName = config.getConnectionDb();
+            ResultSet resultSet = statement.executeQuery(SQLUtils.showSTableSql(dbName));
             while (resultSet.next()) {
                 set.add(resultSet.getString(1));
             }
-            resultSet = statement.executeQuery(SQLUtils.showTableSql());
+            resultSet = statement.executeQuery(SQLUtils.showTableSql(dbName));
             while (resultSet.next()) {
-                if (StringUtils.isEmpty(resultSet.getString("stable_name"))) {
-                    set.add(resultSet.getString(1));
-                }
+                set.add(resultSet.getString(1));
             }
         } catch (SQLException e) {
             log.error("error occur while show Tables in db {}", config.getConnectionDb(), e);
