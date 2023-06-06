@@ -87,13 +87,14 @@ public class LineMapper extends TableMapper {
                         columnString.append(column).append("=").append(resultSet.getDouble(column)).append("f64,");
                         break;
                     case "BINARY":
+                    case "VARCHAR":
                         columnString.append(column).append("=\"").append(resultSet.getString(column)).append("\",");
                         break;
                     case "BOOL":
                         columnString.append(column).append("=").append(resultSet.getBoolean(column)).append(",");
                         break;
                     default:
-                        throw new IllegalArgumentException("Found invalid datatype in table - column " + value
+                        throw new IllegalArgumentException("Found invalid data type in table - column " + value
                                 + " with type " + value.getClass());
                 }
             }
