@@ -30,7 +30,9 @@ public abstract class TableMapper {
     protected List<String> columns = Lists.newArrayList();
     protected List<String> tags = Lists.newArrayList();
     protected SchemaBuilder tagBuilder = SchemaBuilder.struct();
-    protected Map<String, Schema> valueBuilder = Maps.newHashMap();
+    protected Schema valueSchema;
+    protected String timestampColumn;
+//    protected Map<String, Schema> valueBuilder = Maps.newHashMap();
     protected Map<String, String> columnType = Maps.newHashMap();
     private final OutputFormatEnum format;
 
@@ -67,6 +69,7 @@ public abstract class TableMapper {
         try (Statement statement = connection.createStatement()) {
             resultSet = statement.executeQuery(SQLUtils.describeTableSql(tableName));
             resultSet.next();
+            timestampColumn = resultSet.getString(1);
             while (resultSet.next()) {
                 String name = resultSet.getString(1);
                 columnType.put(name, resultSet.getString(2));
@@ -80,17 +83,15 @@ public abstract class TableMapper {
                 for (String tag : tags) {
                     tagBuilder.field(tag, convertType(columnType.get(tag)));
                 }
+                SchemaBuilder sb = SchemaBuilder.struct();
+                sb.field(timestampColumn, SchemaBuilder.int64().build());
                 for (String column : columns) {
-                    SchemaBuilder sb = SchemaBuilder.struct()
-                            .field("metric", Schema.OPTIONAL_STRING_SCHEMA)
-                            .field("timestamp", Schema.OPTIONAL_INT64_SCHEMA)
-                            .field("value", convertType(columnType.get(column)));
-                    if (!tags.isEmpty()) {
-                        sb.field("tags", tagBuilder.build());
-                    }
-                    Schema field = sb.build();
-                    valueBuilder.put(column, field);
+                    sb.field(column, convertType(columnType.get(column)));
                 }
+                if (!tags.isEmpty()) {
+                    sb.field("tags", tagBuilder.optional().build());
+                }
+                valueSchema = sb.build();
             }
         } catch (SQLException e) {
             log.error("get table {} meta failed", tableName, e);
@@ -123,17 +124,6 @@ public abstract class TableMapper {
         tagBuilder = SchemaBuilder.struct();
     }
 
-    // may be use in custom query
-    private String appendWhere(String query, String startTimestamp, String endTimestamp) {
-        List<String> split = Arrays.asList(query.split("(?i:\\s+where\\s+)"));
-        String appendedQuery = split.get(0) + " where time > '" + startTimestamp + "' and time <= '" + endTimestamp + "'";
-        if (split.size() > 1) {
-            appendedQuery = appendedQuery + " and " + split.get(1);
-        }
-
-        return appendedQuery;
-    }
-
     private Schema convertType(String type) {
         switch (type) {
             case "TINYINT":
@@ -153,10 +143,9 @@ public abstract class TableMapper {
                 return Schema.OPTIONAL_BOOLEAN_SCHEMA;
             case "NCHAR":
             case "JSON":
-                return Schema.OPTIONAL_STRING_SCHEMA;
             case "BINARY":
             case "VARCHAR":
-                return Schema.OPTIONAL_BYTES_SCHEMA;
+                return Schema.OPTIONAL_STRING_SCHEMA;
             default:
                 return null;
         }

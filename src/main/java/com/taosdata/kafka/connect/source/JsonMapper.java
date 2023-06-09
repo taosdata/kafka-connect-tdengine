@@ -23,8 +23,8 @@ public class JsonMapper extends TableMapper {
 
     @Override
     public PendingRecord doExtractRecord(ResultSet resultSet, Map<String, String> partition) {
-        List<Struct> structs = new ArrayList<>();
-        Struct tagStruct = new Struct(tagBuilder.build());
+        List<TDStruct> structs = new ArrayList<>();
+        TDStruct tagStruct = new TDStruct(tagBuilder.build());
 
         Timestamp ts = null;
         try {
@@ -38,17 +38,15 @@ public class JsonMapper extends TableMapper {
             for (String tag : tags) {
                 tagStruct.put(tag, getValue(resultSet, tag, columnType.get(tag)));
             }
+            TDStruct valueStruct = new TDStruct(valueSchema);
+            valueStruct.put(timestampColumn, result);
             for (String column : columns) {
-                Schema value = valueBuilder.get(column);
-                Struct valueStruct = new Struct(value)
-                        .put("metric", column)
-                        .put("timestamp", result)
-                        .put("value", getValue(resultSet, column, columnType.get(column)));
-                if (!tags.isEmpty()) {
-                    valueStruct.put("tags", tagStruct);
-                }
-                structs.add(valueStruct);
+                valueStruct.put(column, getValue(resultSet, column, columnType.get(column)));
             }
+            if (!tags.isEmpty()) {
+                valueStruct.put("tags", tagStruct);
+            }
+            structs.add(valueStruct);
         } catch (SQLException e) {
             log.error("resultSet get value error", e);
         }
@@ -74,10 +72,9 @@ public class JsonMapper extends TableMapper {
                 return resultSet.getBoolean(name);
             case "NCHAR":
             case "JSON":
-                return resultSet.getString(name);
             case "BINARY":
             case "VARCHAR":
-                return resultSet.getBytes(name);
+                return resultSet.getString(name);
             default:
                 return null;
         }
