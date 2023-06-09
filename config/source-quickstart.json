@@ -10,14 +10,14 @@
     "connection.database": "source",
     "connection.attempts": 3,
     "connection.backoff.ms": 5000,
-
     "poll.interval.ms": 1000,
     "topic.prefix": "tdengine-",
     "fetch.max.rows": 100,
     "timestamp.initial": "2020-01-01 00:00:00",
     "query.interval.ms": 1000,
     "topic.per.stable": true,
-
+    "topic.ignore.db": false,
+    "out.format": "line",
     "key.converter": "org.apache.kafka.connect.storage.StringConverter",
     "value.converter": "org.apache.kafka.connect.storage.StringConverter"
   }
