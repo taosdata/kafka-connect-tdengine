@@ -46,7 +46,7 @@ public class TableExecutor implements Comparable<TableExecutor> {
         this.lastUpdate = 0L;
         this.exhaustedResultRecord = false;
         this.nextRecord = null;
-        if (format.endsWith("StringConverter")) {
+        if (format.equalsIgnoreCase("line")) {
             mapper = new LineMapper(topic, tableName, batchMaxRows, processor);
         } else {
             mapper = new JsonMapper(topic, tableName, batchMaxRows, processor);

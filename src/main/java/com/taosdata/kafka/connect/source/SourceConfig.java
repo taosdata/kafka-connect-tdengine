@@ -1,6 +1,7 @@
 package com.taosdata.kafka.connect.source;
 
 import com.taosdata.kafka.connect.config.ConnectionConfig;
+import com.taosdata.kafka.connect.config.OutFormatValidator;
 import com.taosdata.kafka.connect.config.QueryIntervalValidator;
 import com.taosdata.kafka.connect.config.TimestampInitialValidator;
 import org.apache.kafka.common.config.ConfigDef;
@@ -70,6 +71,11 @@ public class SourceConfig extends ConnectionConfig {
     private static final String TOPIC_NAME_IGNORE_DB_DOC = "Whether to ignore the database name when creating a topic, default is false. only valid when topic.per.stable is true";
     private static final String TOPIC_NAME_IGNORE_DB_DISPLAY = "Ignore Database Name";
 
+    private static final String OUT_FORMAT_CONFIG = "out.format";
+    private static final String OUT_FORMAT_CONFIG_DEFAULT = "line";
+    private static final String OUT_FORMAT_CONFIG_DOC = "out format for writing data to kafka";
+    private static final String OUT_FORMAT_CONFIG_DISPLAY = "out format may be one of json or line";
+
     private final int pollInterval;
     //    private boolean monitorTables;
     private final String topicPrefix;
@@ -79,6 +85,7 @@ public class SourceConfig extends ConnectionConfig {
     private final List<String> tables;
     private final boolean topicPerSuperTable;
     private final boolean topicNameIgnoreDb;
+    private final String outFormat;
 
     public SourceConfig(Map<?, ?> props) {
         super(config(), props);
@@ -97,6 +104,7 @@ public class SourceConfig extends ConnectionConfig {
         this.tables = this.getList(TABLES_CONFIG);
         this.topicPerSuperTable = this.getBoolean(TOPIC_PER_SUPER_TABLE);
         this.topicNameIgnoreDb = this.getBoolean(TOPIC_NAME_IGNORE_DB);
+        this.outFormat = this.getString(OUT_FORMAT_CONFIG);
     }
 
     public static ConfigDef config() {
@@ -193,6 +201,18 @@ public class SourceConfig extends ConnectionConfig {
                         TOPIC_NAME_IGNORE_DB_DISPLAY
                 )
                 .define(
+                        OUT_FORMAT_CONFIG,
+                        ConfigDef.Type.STRING,
+                        OUT_FORMAT_CONFIG_DEFAULT,
+                        OutFormatValidator.INSTANCE,
+                        ConfigDef.Importance.MEDIUM,
+                        OUT_FORMAT_CONFIG_DOC,
+                        READ,
+                        ++orderInGroup,
+                        ConfigDef.Width.SHORT,
+                        OUT_FORMAT_CONFIG_DISPLAY
+                )
+                .define(
                         TABLES_CONFIG,
                         ConfigDef.Type.LIST,
                         Collections.EMPTY_LIST,
@@ -236,4 +256,9 @@ public class SourceConfig extends ConnectionConfig {
     public boolean isTopicNameIgnoreDb() {
         return topicNameIgnoreDb;
     }
+
+    public String getOutFormat() {
+        return outFormat;
+    }
+
 }

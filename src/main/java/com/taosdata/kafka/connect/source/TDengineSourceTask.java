@@ -47,7 +47,6 @@ public class TDengineSourceTask extends SourceTask {
         properties.setProperty(TSDBDriver.PROPERTY_KEY_USER, config.getConnectionUser());
         properties.setProperty(TSDBDriver.PROPERTY_KEY_PASSWORD, config.getConnectionPassword());
         properties.setProperty(TSDBDriver.PROPERTY_KEY_CHARSET, "UTF-8");
-        String convert = props.getOrDefault("value.converter", "org.apache.kafka.connect.storage.StringConverter");
         ConnectionProvider provider = new TSDBConnectionProvider(config.getConnectionUrl(), properties,
                 config.getConnectionAttempts(), config.getConnectionBackoffMs());
         processor = new CacheProcessor<>(provider);
@@ -75,7 +74,7 @@ public class TDengineSourceTask extends SourceTask {
                     log.debug("start poll data from db {} table: {}, to topic: {}", dbName, table, topicName);
                     executor = new TableExecutor(table, topicName, offset, processor, config.getFetchMaxRows(),
                             partition, config.getTimestampInitial(),
-                            convert, config.getQueryInterval());
+                            config.getOutFormat(), config.getQueryInterval());
                 } catch (SQLException e) {
                     log.error("error occur", e);
                     throw new ConnectException(e);
