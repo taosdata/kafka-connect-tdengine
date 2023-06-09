@@ -64,7 +64,11 @@ public class TDengineSourceTask extends SourceTask {
                     String topicName;
                     String dbName = config.getConnectionDb();
                     if (config.isTopicPerSuperTable()) {
-                        topicName = config.getTopicPrefix() + "-" + dbName + "-" + table;
+                        if (config.isTopicNameIgnoreDb()) {
+                            topicName = config.getTopicPrefix() + "-" + table;
+                        } else {
+                            topicName = config.getTopicPrefix() + "-" + dbName + "-" + table;
+                        }
                     } else {
                         topicName = config.getTopicPrefix() + "-" + dbName;
                     }

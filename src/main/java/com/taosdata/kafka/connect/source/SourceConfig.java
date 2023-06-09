@@ -65,14 +65,20 @@ public class SourceConfig extends ConnectionConfig {
     private static final String TOPIC_PER_SUPER_TABLE_DOC = "Whether to create a topic for each super table, default is true";
     private static final String TOPIC_PER_SUPER_TABLE_DISPLAY = "Topic for each Super Table";
 
+    public static final String TOPIC_NAME_IGNORE_DB = "topic.ignore.db";
+    private static final boolean TOPIC_NAME_IGNORE_DB_DEFAULT = false;
+    private static final String TOPIC_NAME_IGNORE_DB_DOC = "Whether to ignore the database name when creating a topic, default is false. only valid when topic.per.stable is true";
+    private static final String TOPIC_NAME_IGNORE_DB_DISPLAY = "Ignore Database Name";
+
     private final int pollInterval;
     //    private boolean monitorTables;
     private final String topicPrefix;
     private final Timestamp timestampInitial;
     private final int fetchMaxRows;
-    private long queryInterval = QUERY_INTERVAL_DEFAULT;  // default is null, which means query all data;
+    private final long queryInterval;  // default is null, which means query all data;
     private final List<String> tables;
     private final boolean topicPerSuperTable;
+    private final boolean topicNameIgnoreDb;
 
     public SourceConfig(Map<?, ?> props) {
         super(config(), props);
@@ -90,6 +96,7 @@ public class SourceConfig extends ConnectionConfig {
         this.fetchMaxRows = this.getInt(FETCH_MAX_ROWS_CONFIG);
         this.tables = this.getList(TABLES_CONFIG);
         this.topicPerSuperTable = this.getBoolean(TOPIC_PER_SUPER_TABLE);
+        this.topicNameIgnoreDb = this.getBoolean(TOPIC_NAME_IGNORE_DB);
     }
 
     public static ConfigDef config() {
@@ -175,6 +182,17 @@ public class SourceConfig extends ConnectionConfig {
                         TOPIC_PER_SUPER_TABLE_DISPLAY
                 )
                 .define(
+                        TOPIC_NAME_IGNORE_DB,
+                        ConfigDef.Type.BOOLEAN,
+                        TOPIC_NAME_IGNORE_DB_DEFAULT,
+                        ConfigDef.Importance.LOW,
+                        TOPIC_NAME_IGNORE_DB_DOC,
+                        READ,
+                        ++orderInGroup,
+                        ConfigDef.Width.SHORT,
+                        TOPIC_NAME_IGNORE_DB_DISPLAY
+                )
+                .define(
                         TABLES_CONFIG,
                         ConfigDef.Type.LIST,
                         Collections.EMPTY_LIST,
@@ -213,5 +231,9 @@ public class SourceConfig extends ConnectionConfig {
 
     public boolean isTopicPerSuperTable() {
         return topicPerSuperTable;
+    }
+
+    public boolean isTopicNameIgnoreDb() {
+        return topicNameIgnoreDb;
     }
 }
