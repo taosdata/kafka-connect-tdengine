@@ -104,7 +104,7 @@ public class SourceConfig extends ConnectionConfig {
         this.tables = this.getList(TABLES_CONFIG);
         this.topicPerSuperTable = this.getBoolean(TOPIC_PER_SUPER_TABLE);
         this.topicNameIgnoreDb = this.getBoolean(TOPIC_NAME_IGNORE_DB);
-        this.outFormat = this.getString(OUT_FORMAT_CONFIG);
+        this.outFormat = this.getString(OUT_FORMAT_CONFIG).toLowerCase();
     }
 
     public static ConfigDef config() {
