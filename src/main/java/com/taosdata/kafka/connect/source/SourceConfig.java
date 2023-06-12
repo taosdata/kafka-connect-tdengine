@@ -219,6 +219,8 @@ public class SourceConfig extends ConnectionConfig {
                         ++orderInGroup,
                         ConfigDef.Width.SHORT,
                         OUT_FORMAT_CONFIG_DISPLAY
+                )
+                .define(
                         TOPIC_DELIMITER,
                         ConfigDef.Type.STRING,
                         TOPIC_DELIMITER_DEFAULT,
