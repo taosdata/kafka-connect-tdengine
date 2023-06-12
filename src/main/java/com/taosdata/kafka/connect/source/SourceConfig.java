@@ -76,6 +76,11 @@ public class SourceConfig extends ConnectionConfig {
     private static final String OUT_FORMAT_CONFIG_DOC = "out format for writing data to kafka";
     private static final String OUT_FORMAT_CONFIG_DISPLAY = "out format may be one of json or line";
 
+    public static final String TOPIC_DELIMITER = "topic.delimiter";
+    private static final String TOPIC_DELIMITER_DEFAULT = "-";
+    private static final String TOPIC_DELIMITER_DOC = "The delimiter for topic name, default is '-'";
+    private static final String TOPIC_DELIMITER_DISPLAY = "Topic Delimiter";
+
     private final int pollInterval;
     //    private boolean monitorTables;
     private final String topicPrefix;
@@ -86,6 +91,8 @@ public class SourceConfig extends ConnectionConfig {
     private final boolean topicPerSuperTable;
     private final boolean topicNameIgnoreDb;
     private final String outFormat;
+
+    private final String topicDelimiter;
 
     public SourceConfig(Map<?, ?> props) {
         super(config(), props);
@@ -105,6 +112,7 @@ public class SourceConfig extends ConnectionConfig {
         this.topicPerSuperTable = this.getBoolean(TOPIC_PER_SUPER_TABLE);
         this.topicNameIgnoreDb = this.getBoolean(TOPIC_NAME_IGNORE_DB);
         this.outFormat = this.getString(OUT_FORMAT_CONFIG).toLowerCase();
+        this.topicDelimiter = this.getString(TOPIC_DELIMITER);
     }
 
     public static ConfigDef config() {
@@ -213,6 +221,17 @@ public class SourceConfig extends ConnectionConfig {
                         OUT_FORMAT_CONFIG_DISPLAY
                 )
                 .define(
+                        TOPIC_DELIMITER,
+                        ConfigDef.Type.STRING,
+                        TOPIC_DELIMITER_DEFAULT,
+                        ConfigDef.Importance.LOW,
+                        TOPIC_DELIMITER_DOC,
+                        READ,
+                        ++orderInGroup,
+                        ConfigDef.Width.SHORT,
+                        TOPIC_DELIMITER_DISPLAY
+                )
+                .define(
                         TABLES_CONFIG,
                         ConfigDef.Type.LIST,
                         Collections.EMPTY_LIST,
@@ -261,4 +280,7 @@ public class SourceConfig extends ConnectionConfig {
         return outFormat;
     }
 
+    public String getTopicDelimiter() {
+        return topicDelimiter;
+    }
 }
