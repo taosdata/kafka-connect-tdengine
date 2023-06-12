@@ -62,14 +62,15 @@ public class TDengineSourceTask extends SourceTask {
                 try {
                     String topicName;
                     String dbName = config.getConnectionDb();
+                    String topicDelimiter = config.getTopicDelimiter();
                     if (config.isTopicPerSuperTable()) {
                         if (config.isTopicNameIgnoreDb()) {
-                            topicName = config.getTopicPrefix() + "-" + table;
+                            topicName = config.getTopicPrefix() + topicDelimiter + table;
                         } else {
-                            topicName = config.getTopicPrefix() + "-" + dbName + "-" + table;
+                            topicName = config.getTopicPrefix() + topicDelimiter + dbName + topicDelimiter + table;
                         }
                     } else {
-                        topicName = config.getTopicPrefix() + "-" + dbName;
+                        topicName = config.getTopicPrefix() + topicDelimiter + dbName;
                     }
                     log.debug("start poll data from db {} table: {}, to topic: {}", dbName, table, topicName);
                     executor = new TableExecutor(table, topicName, offset, processor, config.getFetchMaxRows(),
