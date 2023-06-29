@@ -100,8 +100,8 @@ public class LineMapper extends TableMapper {
             }
             String s = columnString.toString();
             sb.append(s, 0, s.length() - 1);
-            sb.append(" ").append(resultSet.getTimestamp(1).getTime()).append(String.format("%06d", resultSet.getTimestamp(1).getNanos() % 1000000));
-            ts = resultSet.getTimestamp(1);
+            sb.append(" ").append(resultSet.getTimestamp("_c0").getTime()).append(String.format("%06d", resultSet.getTimestamp("_c0").getNanos() % 1000000));
+            ts = resultSet.getTimestamp("_c0");
         } catch (SQLException e) {
             log.error("resultSet get value error", e);
         }

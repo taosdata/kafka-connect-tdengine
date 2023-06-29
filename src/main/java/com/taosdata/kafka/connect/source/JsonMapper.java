@@ -28,7 +28,7 @@ public class JsonMapper extends TableMapper {
 
         Timestamp ts = null;
         try {
-            ts = resultSet.getTimestamp(1);
+            ts = resultSet.getTimestamp("_c0");
             long result = resultSet.getLong(1);
             if (result > 1_000_000_000_000_000_000L) {
                 result = result / 1_000_000;
