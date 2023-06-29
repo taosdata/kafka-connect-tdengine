@@ -53,12 +53,11 @@ public abstract class TableMapper {
         }
         getMetaSchema();
         try {
-            StringBuilder sb = new StringBuilder().append("select ");
+            StringBuilder sb = new StringBuilder().append("select _c0,");
             if (!tags.isEmpty()) {
                 sb.append("`").append(String.join("`,`", tags)).append("`");
                 sb.append(", ");
             }
-            sb.append("_c0, ");
             for (int i = 0; i < columns.size(); i++) {
                 sb.append("`").append(columns.get(i)).append("`");
                 if (i != columns.size() - 1) {
