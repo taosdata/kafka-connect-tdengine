@@ -32,7 +32,7 @@ public abstract class TableMapper {
     protected SchemaBuilder tagBuilder = SchemaBuilder.struct();
     protected Schema valueSchema;
     protected String timestampColumn;
-//    protected Map<String, Schema> valueBuilder = Maps.newHashMap();
+    //    protected Map<String, Schema> valueBuilder = Maps.newHashMap();
     protected Map<String, String> columnType = Maps.newHashMap();
     private final OutputFormatEnum format;
 
@@ -53,8 +53,21 @@ public abstract class TableMapper {
         }
         getMetaSchema();
         try {
-            preparedStatement = connection.prepareStatement(
-                    "select * from `" + tableName + "` where _c0 > ? and _c0 <= ? order by _c0 asc");
+            StringBuilder sb = new StringBuilder().append("select ");
+            if (!tags.isEmpty()) {
+                sb.append("`").append(String.join("`,`", tags)).append("`");
+            }
+            sb.append("_c0, ");
+            for (int i = 0; i < columns.size(); i++) {
+                sb.append("`").append(columns.get(i)).append("`");
+                if (i != columns.size() - 1) {
+                    sb.append(",");
+                }
+            }
+            sb.append(" from `").append(tableName).append("` where _c0 > ? and _c0 <= ? order by _c0 asc , `").append(columns.get(0)).append("`");
+            log.debug("execute query sql: {}", sb);
+            preparedStatement = connection.prepareStatement(sb.toString());
+//                    "select * from `" + tableName + "` where _c0 > ? and _c0 <= ? order by _c0 asc and " + columns.get(0));
             if (batchMaxRows > 0) {
                 preparedStatement.setFetchSize(batchMaxRows);
             }
