@@ -56,6 +56,7 @@ public abstract class TableMapper {
             StringBuilder sb = new StringBuilder().append("select ");
             if (!tags.isEmpty()) {
                 sb.append("`").append(String.join("`,`", tags)).append("`");
+                sb.append(", ");
             }
             sb.append("_c0, ");
             for (int i = 0; i < columns.size(); i++) {
