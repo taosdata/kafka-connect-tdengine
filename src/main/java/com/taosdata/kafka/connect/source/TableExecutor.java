@@ -18,7 +18,6 @@ public class TableExecutor implements Comparable<TableExecutor> {
     private TimeStampOffset committedOffset;
     private TimeStampOffset offset;
     // end query time
-    private Timestamp latestStartTime;
     private long latestEndTime;
 
     private ResultSet resultSet;
@@ -78,10 +77,7 @@ public class TableExecutor implements Comparable<TableExecutor> {
                         }
                     }
                 }
-                if (!latestStartTime.equals(startTime)) {
-                    latestEndTime = 0;
-                }
-                latestStartTime = startTime;
+
                 log.debug("query start from: {}", startTime);
                 stmt.setTimestamp(1, startTime);
                 long current = System.currentTimeMillis();
@@ -103,6 +99,10 @@ public class TableExecutor implements Comparable<TableExecutor> {
             exhaustedResultRecord = false;
         }
         this.committedOffset = this.offset;
+    }
+
+    public void clearEndQuery() {
+        this.latestEndTime = 0;
     }
 
     public String getTableName() {

@@ -112,6 +112,7 @@ public class TDengineSourceTask extends SourceTask {
             int batchMaxRows = config.getFetchMaxRows();
             boolean hadNext = true;
             while (results.size() < batchMaxRows && (hadNext = executor.next())) {
+                executor.clearEndQuery();
                 SourceRecord record = executor.extractRecord();
                 if (record.value() instanceof List) {
                     for (Struct struct : (List<Struct>) record.value()) {
