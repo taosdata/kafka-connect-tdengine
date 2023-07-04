@@ -96,9 +96,9 @@ public class TDengineSourceTask extends SourceTask {
         // If not in the middle of an update, wait for next update time
         long nextUpdate = executor.getLastUpdate() + config.getPollInterval();
         long now = this.time.milliseconds();
-        long sleepMs = Math.min(nextUpdate - now, 1000);
+        long sleepMs = nextUpdate - now;
         if (sleepMs > 0) {
-            log.debug("Waiting {} ms to poll {} next", nextUpdate - now, executor.getTableName());
+            log.debug("Waiting {} ms to poll {} next", sleepMs, executor.getTableName());
             this.time.sleep(sleepMs);
         } else if (consecutiveEmptyResults.get(executor) > 0) {
             TimeUnit.MILLISECONDS.sleep(config.getPollInterval());
@@ -112,7 +112,6 @@ public class TDengineSourceTask extends SourceTask {
             int batchMaxRows = config.getFetchMaxRows();
             boolean hadNext = true;
             while (results.size() < batchMaxRows && (hadNext = executor.next())) {
-                executor.clearLatestQuery();
                 SourceRecord record = executor.extractRecord();
                 if (record.value() instanceof List) {
                     for (Struct struct : (List<Struct>) record.value()) {

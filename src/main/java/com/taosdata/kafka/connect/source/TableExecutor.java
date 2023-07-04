@@ -17,12 +17,15 @@ public class TableExecutor implements Comparable<TableExecutor> {
 
     private TimeStampOffset committedOffset;
     private TimeStampOffset offset;
-    private Timestamp latestQueryTime;
+    // end query time
+    private Timestamp latestStartTime;
+    private long latestEndTime;
 
     private ResultSet resultSet;
 
     private PendingRecord nextRecord;
     private boolean exhaustedResultRecord;
+
     private final Timestamp start;
 
     private final TableMapper mapper;
@@ -60,40 +63,41 @@ public class TableExecutor implements Comparable<TableExecutor> {
     public void startQuery() throws SQLException, ConnectException {
         if (resultSet == null) {
             PreparedStatement stmt = mapper.getOrCreatePreparedStatement();
+            Timestamp startTime = null == offset.getTimestampOffset() ? start : offset.getTimestampOffset();
             if (queryInterval == 0) {
-                Timestamp startTime = null == offset.getTimestampOffset() ? start : offset.getTimestampOffset();
                 stmt.setTimestamp(1, startTime);
                 log.debug("query start from: {}", startTime);
                 stmt.setTimestamp(2, new Timestamp(System.currentTimeMillis()));
             } else {
-                Timestamp startTime = latestQueryTime;
-                if (startTime == null) {
-                    startTime = null == offset.getTimestampOffset() ? start : offset.getTimestampOffset();
 
-                    if (startTime.getTime() == 0) {
-                        try (ResultSet rs = stmt.executeQuery("select first(_c0) from " + tableName)) {
-                            if (rs.next()) {
-                                Timestamp tmp = rs.getTimestamp("_c0");
-                                startTime = new Timestamp(tmp.getTime() - 1);
-                            }
+                if (startTime.getTime() == 0) {
+                    try (ResultSet rs = stmt.executeQuery("select first(_c0) from " + tableName)) {
+                        if (rs.next()) {
+                            Timestamp tmp = rs.getTimestamp("_c0");
+                            startTime = new Timestamp(tmp.getTime() - 1);
                         }
                     }
                 }
-
-//                log.debug("query start from: {}", startTime);
-                log.info("query start from: {}", startTime);
+                if (!latestStartTime.equals(startTime)) {
+                    latestEndTime = 0;
+                }
+                latestStartTime = startTime;
+                log.debug("query start from: {}", startTime);
                 stmt.setTimestamp(1, startTime);
                 long current = System.currentTimeMillis();
-                long end = startTime.getTime() + queryInterval;
-                if (current < end) {
-                    end = current;
+                if (latestEndTime == 0) {
+                    latestEndTime = startTime.getTime() + queryInterval;
+                } else {
+                    latestEndTime += queryInterval;
                 }
-                Timestamp endTime = new Timestamp(end);
 
-//                log.debug("query end with: {}", endTime);
-                log.info("query end with: {}", endTime);
+                if (current < latestEndTime) {
+                    latestEndTime = current;
+                }
+                Timestamp endTime = new Timestamp(latestEndTime);
+
+                log.debug("query end with: {}", endTime);
                 stmt.setTimestamp(2, endTime);
-                latestQueryTime = endTime;
             }
             this.resultSet = stmt.executeQuery();
             exhaustedResultRecord = false;
@@ -125,10 +129,6 @@ public class TableExecutor implements Comparable<TableExecutor> {
             }
         }
         resultSet = null;
-    }
-
-    public void clearLatestQuery() {
-        this.latestQueryTime = null;
     }
 
     public boolean next() throws SQLException {
