@@ -33,6 +33,7 @@ class TDengineTaskTest {
         SinkTaskContext context = getSinkTaskContext();
         task.initialize(context);
         configMap.put("connector.class", "com.taosdata.kafka.connect.sink.TDengineSinkConnector");
+        configMap.put("read.method","query");
         task.start(configMap);
 
         String line = "st,t1=3,t2=4,t3=t3 c1=3i64,c3=L\"passit\",c2=false,c4=4f64 1626006833639000000";
