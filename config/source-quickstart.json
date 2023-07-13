@@ -3,7 +3,6 @@
   "config": {
     "connector.class": "com.taosdata.kafka.connect.source.TDengineSourceConnector",
     "tasks.max": 1,
-
     "connection.url": "jdbc:TAOS://127.0.0.1:6030",
     "connection.user": "root",
     "connection.password": "taosdata",
@@ -19,6 +18,9 @@
     "topic.per.stable": true,
     "topic.ignore.db": false,
     "out.format": "line",
+    "read.method": "query",
+    "subscription.group.id": "gId",
+    "subscription.from": "latest",
     "key.converter": "org.apache.kafka.connect.storage.StringConverter",
     "value.converter": "org.apache.kafka.connect.storage.StringConverter"
   }
