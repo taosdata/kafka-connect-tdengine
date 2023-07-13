@@ -63,7 +63,6 @@ public class JsonMapper extends TableMapper {
         List<SourceRecord> pendingRecords = new ArrayList<>();
 
         for (ConsumerRecord<Map<String, Object>> record : records) {
-            List<TDStruct> structs = new ArrayList<>();
             TDStruct tagStruct = new TDStruct(tagBuilder.build());
             Map<String, Object> value = record.value();
 
@@ -79,10 +78,9 @@ public class JsonMapper extends TableMapper {
             if (!tags.isEmpty()) {
                 valueStruct.put("tags", tagStruct);
             }
-            structs.add(valueStruct);
 
             pendingRecords.add(new SourceRecord(
-                    partition, offset.toMap(), topic, valueSchema, structs));
+                    partition, offset.toMap(), topic, valueSchema, valueStruct));
         }
         return pendingRecords;
     }
