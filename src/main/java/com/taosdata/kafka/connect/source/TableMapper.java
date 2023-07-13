@@ -2,19 +2,19 @@ package com.taosdata.kafka.connect.source;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.taosdata.jdbc.tmq.ConsumerRecords;
 import com.taosdata.kafka.connect.db.Processor;
 import com.taosdata.kafka.connect.enums.OutputFormatEnum;
 import com.taosdata.kafka.connect.util.SQLUtils;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
+import org.apache.kafka.connect.source.SourceRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.*;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * tableName timestampColumn columns tags
@@ -77,7 +77,10 @@ public abstract class TableMapper {
         return preparedStatement;
     }
 
-    private void getMetaSchema() {
+    public void getMetaSchema() {
+        if (!columns.isEmpty()) {
+            return;
+        }
         ResultSet resultSet = null;
         try (Statement statement = connection.createStatement()) {
             resultSet = statement.executeQuery(SQLUtils.describeTableSql(tableName));
@@ -120,6 +123,9 @@ public abstract class TableMapper {
     }
 
     public abstract PendingRecord doExtractRecord(ResultSet resultSet, Map<String, String> partition);
+
+    public abstract List<SourceRecord> process(ConsumerRecords<Map<String, Object>> records
+            , Map<String, String> partition, TimeStampOffset offset);
 
     public void closeStatement() {
         if (preparedStatement != null) {
