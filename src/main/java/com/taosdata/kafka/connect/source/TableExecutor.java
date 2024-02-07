@@ -113,7 +113,7 @@ public class TableExecutor implements Comparable<TableExecutor>, AutoCloseable {
         if (ReadMethodEnum.SUBSCRIPTION == readMethod) {
             mapper.getMetaSchema();
             records = consumer.poll(Duration.ofMillis(10));
-            //log.info("********** received records: {}", JSON.toJSONString(records));
+            log.info("********** received records: {}-------", JSON.toJSONString(records));
 
 
         } else {
