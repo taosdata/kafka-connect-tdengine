@@ -1,5 +1,6 @@
 package com.taosdata.kafka.connect.source;
 
+import com.alibaba.fastjson.JSON;
 import com.taosdata.jdbc.TSDBDriver;
 import com.taosdata.kafka.connect.db.CacheProcessor;
 import com.taosdata.kafka.connect.db.ConnectionProvider;
@@ -128,6 +129,8 @@ public class TDengineSourceTask extends SourceTask {
                 results = executor.extractRecords();
                 resetAndRequeueHead(executor, false);
                 executor.commitOffset();
+
+                log.info("********** received results: {}", JSON.toJSONString(results));
                 return results;
             } else {
                 int batchMaxRows = config.getFetchMaxRows();
