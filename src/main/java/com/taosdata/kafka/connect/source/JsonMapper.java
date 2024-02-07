@@ -1,5 +1,6 @@
 package com.taosdata.kafka.connect.source;
 
+import com.alibaba.fastjson.JSON;
 import com.taosdata.jdbc.tmq.ConsumerRecord;
 import com.taosdata.jdbc.tmq.ConsumerRecords;
 import com.taosdata.kafka.connect.db.Processor;
@@ -79,11 +80,13 @@ public class JsonMapper extends TableMapper {
             if (!tags.isEmpty()) {
                 valueStruct.put("tags", tagStruct);
             }
+            log.info("********** received pendingRecords info: {}-------", JSON.toJSONString(valueStruct));
             structs.add(valueStruct);
 
             pendingRecords.add(new SourceRecord(
                     partition, offset.toMap(), topic, valueSchema, structs));
         }
+        log.info("********** received pendingRecords len: {}-------", pendingRecords.size());
         return pendingRecords;
     }
 
