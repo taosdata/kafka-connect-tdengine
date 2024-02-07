@@ -129,8 +129,11 @@ public class TDengineSourceTask extends SourceTask {
                 results = executor.extractRecords();
                 resetAndRequeueHead(executor, false);
                 executor.commitOffset();
-
-//                log.info("********** received results: {}", JSON.toJSONString(results));
+                for (SourceRecord record : results) {
+                    log.info("********** received results: {}", JSON.toJSONString(record));
+                }
+                log.info("********** received results len: {}", results.size());
+//
                 return results;
             } else {
                 int batchMaxRows = config.getFetchMaxRows();
