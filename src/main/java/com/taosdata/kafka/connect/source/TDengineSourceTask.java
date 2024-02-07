@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
  */
 public class TDengineSourceTask extends SourceTask {
     private static final Logger log = LoggerFactory.getLogger(TDengineSourceTask.class);
-
+    private static long totol = 0;
     private SourceConfig config;
     private Processor processor;
     private ReadMethodEnum readMethod;
@@ -129,11 +129,13 @@ public class TDengineSourceTask extends SourceTask {
                 results = executor.extractRecords();
                 resetAndRequeueHead(executor, false);
                 executor.commitOffset();
-                for (SourceRecord record : results) {
-                    log.info("********** received results: {}", JSON.toJSONString(record));
+                if (!results.isEmpty()) {
+                    for (SourceRecord record : results) {
+                        log.info("********** received poll results: {}", record.toString());
+                    }
+                    totol += results.size();
+                    log.info("********** received results poll len: {}, totol:{}", results.size(), totol);
                 }
-                log.info("********** received results len: {}", results.size());
-//
                 return results;
             } else {
                 int batchMaxRows = config.getFetchMaxRows();
