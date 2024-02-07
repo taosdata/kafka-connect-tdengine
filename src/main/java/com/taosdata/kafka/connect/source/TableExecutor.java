@@ -1,5 +1,6 @@
 package com.taosdata.kafka.connect.source;
 
+import com.alibaba.fastjson.JSON;
 import com.taosdata.jdbc.TSDBDriver;
 import com.taosdata.jdbc.tmq.*;
 import com.taosdata.kafka.connect.db.Processor;
@@ -112,6 +113,9 @@ public class TableExecutor implements Comparable<TableExecutor>, AutoCloseable {
         if (ReadMethodEnum.SUBSCRIPTION == readMethod) {
             mapper.getMetaSchema();
             records = consumer.poll(Duration.ofMillis(10));
+            log.info("********** received records: {}", JSON.toJSONString(records));
+
+
         } else {
             if (resultSet == null) {
                 PreparedStatement stmt = mapper.getOrCreatePreparedStatement();
