@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 
 public class JsonMapper extends TableMapper {
     private static final Logger log = LoggerFactory.getLogger(JsonMapper.class);
-
+    public static int count;
     public JsonMapper(String topic, String tableName, int batchMaxRows, Processor processor) throws SQLException {
         super(topic, tableName, batchMaxRows, processor, OutputFormatEnum.JSON);
     }
@@ -86,7 +86,11 @@ public class JsonMapper extends TableMapper {
             pendingRecords.add(new SourceRecord(
                     partition, offset.toMap(), topic, valueSchema, structs));
         }
-        log.info("********** received pendingRecords len: {}-------", pendingRecords.size());
+
+        if (!pendingRecords.isEmpty()) {
+            count += pendingRecords.size();
+            log.info("********** received pendingRecords len: {}-------total:{}", pendingRecords.size(), count);
+        }
         return pendingRecords;
     }
 
