@@ -136,6 +136,7 @@ public class TDengineSourceTask extends SourceTask {
                     totol += results.size();
                     log.info("********** received results poll len: {}, totol:{}", results.size(), totol);
                 }
+                time.sleep(5*1000);
                 return results;
             } else {
                 int batchMaxRows = config.getFetchMaxRows();
