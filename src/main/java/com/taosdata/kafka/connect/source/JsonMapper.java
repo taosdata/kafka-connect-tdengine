@@ -80,7 +80,7 @@ public class JsonMapper extends TableMapper {
             if (!tags.isEmpty()) {
                 valueStruct.put("tags", tagStruct);
             }
-            log.info("********** received pendingRecords info: {}-------", valueStruct.toString());
+
             structs.add(valueStruct);
 
             pendingRecords.add(new SourceRecord(
@@ -89,7 +89,6 @@ public class JsonMapper extends TableMapper {
 
         if (!pendingRecords.isEmpty()) {
             count += pendingRecords.size();
-            log.info("********** received pendingRecords len: {}-------total:{}", pendingRecords.size(), count);
         }
         return pendingRecords;
     }

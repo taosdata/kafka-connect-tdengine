@@ -130,9 +130,6 @@ public class TDengineSourceTask extends SourceTask {
                 resetAndRequeueHead(executor, false);
                 executor.commitOffset();
                 if (!results.isEmpty()) {
-                    for (SourceRecord record : results) {
-                        log.info("********** received poll results: {}", record.toString());
-                    }
                     totol += results.size();
                     log.info("********** received results poll len: {}, totol:{}", results.size(), totol);
                 }
