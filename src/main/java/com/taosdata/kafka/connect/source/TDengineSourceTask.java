@@ -121,7 +121,7 @@ public class TDengineSourceTask extends SourceTask {
             return Collections.emptyList();
         }
 
-        log.info("start poll new data from table: {}", executor.getTableName());
+//        log.info("start poll new data from table: {}", executor.getTableName());
         List<SourceRecord> results = new ArrayList<>();
         try {
             executor.startQuery();
@@ -131,7 +131,7 @@ public class TDengineSourceTask extends SourceTask {
                 executor.commitOffset();
                 if (!results.isEmpty()) {
                     totol += results.size();
-                    log.info("********** received results poll len: {}, totol:{}", results.size(), totol);
+                    log.info("**********poll from table: {} received results poll len: {}, totol:{}", executor.getTableName(), results.size(), totol);
                 }
                 return results;
             } else {
