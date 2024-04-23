@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
  */
 public class TDengineSourceTask extends SourceTask {
     private static final Logger log = LoggerFactory.getLogger(TDengineSourceTask.class);
-
+    private static long totol = 0;
     private SourceConfig config;
     private Processor processor;
     private ReadMethodEnum readMethod;
@@ -121,7 +121,7 @@ public class TDengineSourceTask extends SourceTask {
             return Collections.emptyList();
         }
 
-        log.info("start poll new data from table: {}", executor.getTableName());
+//        log.info("start poll new data from table: {}", executor.getTableName());
         List<SourceRecord> results = new ArrayList<>();
         try {
             executor.startQuery();
@@ -129,8 +129,10 @@ public class TDengineSourceTask extends SourceTask {
                 results = executor.extractRecords();
                 resetAndRequeueHead(executor, false);
                 executor.commitOffset();
-
-                log.trace("********** received results: {}", JSON.toJSONString(results));
+                if (!results.isEmpty()) {
+                    totol += results.size();
+                    log.trace("**********poll from table: {} received results poll len: {}, totol:{}", executor.getTableName(), results.size(), totol);
+                }
                 return results;
             } else {
                 int batchMaxRows = config.getFetchMaxRows();
