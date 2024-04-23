@@ -159,7 +159,7 @@ public class TableExecutor implements Comparable<TableExecutor>, AutoCloseable {
         this.committedOffset = this.offset;
     }
 
-    public void commitOffset() {
+    public void commitOffset() throws SQLException {
         if (ReadMethodEnum.SUBSCRIPTION == readMethod) {
             consumer.commitAsync();
             records = null;
@@ -249,8 +249,16 @@ public class TableExecutor implements Comparable<TableExecutor>, AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         closeResultSet();
         mapper.closeStatement();
+        if (ReadMethodEnum.SUBSCRIPTION == readMethod) {
+            try {
+                consumer.close();
+                log.error("close consumer with this table success: " + tableName);
+            } catch (Exception e){
+                log.error("close consumer error ", e);
+            }
+        }
     }
 }

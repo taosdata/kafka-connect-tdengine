@@ -130,7 +130,7 @@ public class TDengineSourceTask extends SourceTask {
                 resetAndRequeueHead(executor, false);
                 executor.commitOffset();
 
-                log.info("********** received results: {}", JSON.toJSONString(results));
+                log.trace("********** received results: {}", JSON.toJSONString(results));
                 return results;
             } else {
                 int batchMaxRows = config.getFetchMaxRows();
@@ -178,6 +178,11 @@ public class TDengineSourceTask extends SourceTask {
     @Override
     public void stop() {
         log.info("Stop TDengine Source Task");
+
+        for (TableExecutor executor : executors){
+            executor.close();
+        }
+
         processor.close();
     }
 
