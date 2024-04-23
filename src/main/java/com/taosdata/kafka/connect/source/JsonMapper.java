@@ -1,5 +1,6 @@
 package com.taosdata.kafka.connect.source;
 
+import com.alibaba.fastjson.JSON;
 import com.taosdata.jdbc.tmq.ConsumerRecord;
 import com.taosdata.jdbc.tmq.ConsumerRecords;
 import com.taosdata.kafka.connect.db.Processor;
@@ -20,7 +21,7 @@ import java.util.stream.Collectors;
 
 public class JsonMapper extends TableMapper {
     private static final Logger log = LoggerFactory.getLogger(JsonMapper.class);
-
+    public static int count;
     public JsonMapper(String topic, String tableName, int batchMaxRows, Processor processor) throws SQLException {
         super(topic, tableName, batchMaxRows, processor, OutputFormatEnum.JSON);
     }
@@ -79,10 +80,15 @@ public class JsonMapper extends TableMapper {
             if (!tags.isEmpty()) {
                 valueStruct.put("tags", tagStruct);
             }
+
             structs.add(valueStruct);
 
             pendingRecords.add(new SourceRecord(
                     partition, offset.toMap(), topic, valueSchema, structs));
+        }
+
+        if (!pendingRecords.isEmpty()) {
+            count += pendingRecords.size();
         }
         return pendingRecords;
     }

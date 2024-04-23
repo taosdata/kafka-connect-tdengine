@@ -1,5 +1,6 @@
 package com.taosdata.kafka.connect.source;
 
+import com.alibaba.fastjson.JSON;
 import com.taosdata.jdbc.TSDBDriver;
 import com.taosdata.kafka.connect.db.CacheProcessor;
 import com.taosdata.kafka.connect.db.ConnectionProvider;
@@ -29,7 +30,7 @@ import java.util.stream.Collectors;
  */
 public class TDengineSourceTask extends SourceTask {
     private static final Logger log = LoggerFactory.getLogger(TDengineSourceTask.class);
-
+    private static long totol = 0;
     private SourceConfig config;
     private Processor processor;
     private ReadMethodEnum readMethod;
@@ -120,7 +121,7 @@ public class TDengineSourceTask extends SourceTask {
             return Collections.emptyList();
         }
 
-        log.info("start poll new data from table: {}", executor.getTableName());
+//        log.info("start poll new data from table: {}", executor.getTableName());
         List<SourceRecord> results = new ArrayList<>();
         try {
             executor.startQuery();
@@ -128,6 +129,10 @@ public class TDengineSourceTask extends SourceTask {
                 results = executor.extractRecords();
                 resetAndRequeueHead(executor, false);
                 executor.commitOffset();
+                if (!results.isEmpty()) {
+                    totol += results.size();
+                    log.trace("**********poll from table: {} received results poll len: {}, totol:{}", executor.getTableName(), results.size(), totol);
+                }
                 return results;
             } else {
                 int batchMaxRows = config.getFetchMaxRows();
@@ -175,6 +180,11 @@ public class TDengineSourceTask extends SourceTask {
     @Override
     public void stop() {
         log.info("Stop TDengine Source Task");
+
+        for (TableExecutor executor : executors){
+            executor.close();
+        }
+
         processor.close();
     }
 
