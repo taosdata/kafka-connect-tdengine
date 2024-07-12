@@ -59,32 +59,33 @@ public class JsonMapper extends TableMapper {
     }
 
     @Override
-    public List<SourceRecord> process(ConsumerRecords<Map<String, Object>> records, Map<String, String> partition
+    public List<SourceRecord> process(List<ConsumerRecords<Map<String, Object>>> recordsList, Map<String, String> partition
             , TimeStampOffset offset) {
         List<SourceRecord> pendingRecords = new ArrayList<>();
+        for (ConsumerRecords<Map<String, Object>> records: recordsList) {
+            for (ConsumerRecord<Map<String, Object>> record : records) {
+                List<TDStruct> structs = new ArrayList<>();
+                TDStruct tagStruct = new TDStruct(tagBuilder.build());
+                Map<String, Object> value = record.value();
 
-        for (ConsumerRecord<Map<String, Object>> record : records) {
-            List<TDStruct> structs = new ArrayList<>();
-            TDStruct tagStruct = new TDStruct(tagBuilder.build());
-            Map<String, Object> value = record.value();
+                long ts = (Long) value.get(timestampColumn);
+                for (String tag : tags) {
+                    tagStruct.put(tag, value.get(tag));
+                }
+                TDStruct valueStruct = new TDStruct(valueSchema);
+                valueStruct.put(timestampColumn, ts);
+                for (String column : columns) {
+                    valueStruct.put(column, value.get(column));
+                }
+                if (!tags.isEmpty()) {
+                    valueStruct.put("tags", tagStruct);
+                }
 
-            long ts = (Long) value.get(timestampColumn);
-            for (String tag : tags) {
-                tagStruct.put(tag, value.get(tag));
+                structs.add(valueStruct);
+
+                pendingRecords.add(new SourceRecord(
+                        partition, offset.toMap(), topic, valueSchema, structs));
             }
-            TDStruct valueStruct = new TDStruct(valueSchema);
-            valueStruct.put(timestampColumn, ts);
-            for (String column : columns) {
-                valueStruct.put(column, value.get(column));
-            }
-            if (!tags.isEmpty()) {
-                valueStruct.put("tags", tagStruct);
-            }
-
-            structs.add(valueStruct);
-
-            pendingRecords.add(new SourceRecord(
-                    partition, offset.toMap(), topic, valueSchema, structs));
         }
 
         if (!pendingRecords.isEmpty()) {

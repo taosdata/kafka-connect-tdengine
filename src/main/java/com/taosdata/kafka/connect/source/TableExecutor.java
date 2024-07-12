@@ -40,7 +40,7 @@ public class TableExecutor implements Comparable<TableExecutor>, AutoCloseable {
     private ReadMethodEnum readMethod;
     private String groupId;
     private String autoOffsetReset;
-    ConsumerRecords<Map<String, Object>> records;
+    List<ConsumerRecords<Map<String, Object>>> records = new LinkedList<>();
 
     public TableExecutor(String tableName,
                          String topic,
@@ -112,8 +112,14 @@ public class TableExecutor implements Comparable<TableExecutor>, AutoCloseable {
     public void startQuery() throws SQLException, ConnectException {
         if (ReadMethodEnum.SUBSCRIPTION == readMethod) {
             mapper.getMetaSchema();
-            records = consumer.poll(Duration.ofMillis(10));
-
+            while (true){
+                ConsumerRecords<Map<String, Object>> consumerRecords = consumer.poll(Duration.ofMillis(100));
+                if (consumerRecords.isEmpty()){
+                    break;
+                } else {
+                    records.add(consumerRecords);
+                }
+            }
 
         } else {
             if (resultSet == null) {
@@ -161,7 +167,7 @@ public class TableExecutor implements Comparable<TableExecutor>, AutoCloseable {
     public void commitOffset() throws SQLException {
         if (ReadMethodEnum.SUBSCRIPTION == readMethod) {
             consumer.commitAsync();
-            records = null;
+            records.clear();
         }
     }
 

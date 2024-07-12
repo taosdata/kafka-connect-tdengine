@@ -115,89 +115,91 @@ public class LineMapper extends TableMapper {
     }
 
     @Override
-    public List<SourceRecord> process(ConsumerRecords<Map<String, Object>> records, Map<String, String> partition, TimeStampOffset offset) {
+    public List<SourceRecord> process(List<ConsumerRecords<Map<String, Object>>> recordsList, Map<String, String> partition, TimeStampOffset offset) {
         List<SourceRecord> list = Lists.newArrayList();
-        for (ConsumerRecord<Map<String, Object>> record : records) {
-            Map<String, Object> map = record.value();
-            StringBuilder sb = new StringBuilder(tableName);
-            if (!tags.isEmpty()) {
-                for (String tag : tags) {
-                    String value = columnType.get(tag);
+        for (ConsumerRecords<Map<String, Object>> records: recordsList) {
+            for (ConsumerRecord<Map<String, Object>> record : records) {
+                Map<String, Object> map = record.value();
+                StringBuilder sb = new StringBuilder(tableName);
+                if (!tags.isEmpty()) {
+                    for (String tag : tags) {
+                        String value = columnType.get(tag);
+                        switch (value) {
+                            case "TIMESTAMP":
+                            case "NCHAR":
+                                sb.append(",").append(tag).append("=").append(map.get(tag));
+                                break;
+                            case "INT":
+                            case "TINYINT":
+                            case "SMALLINT":
+                                sb.append(",").append(tag).append("=").append(map.get(tag));
+                                break;
+                            case "BIGINT":
+                                sb.append(",").append(tag).append("=").append(map.get(tag));
+                                break;
+                            case "FLOAT":
+                                sb.append(",").append(tag).append("=").append(map.get(tag));
+                                break;
+                            case "DOUBLE":
+                                sb.append(",").append(tag).append("=").append(map.get(tag));
+                                break;
+                            case "BINARY":
+                            case "VARCHAR":
+                                sb.append(",").append(tag).append("=\"").append(map.get(tag)).append("\"");
+                                break;
+                            case "BOOL":
+                                sb.append(",").append(tag).append("=").append(map.get(tag));
+                                break;
+                            default:
+                                throw new IllegalArgumentException("Found invalid datatype in table - column " + value
+                                        + " with type " + value.getClass());
+                        }
+                    }
+                }
+
+                sb.append(" ");
+                StringBuilder columnString = new StringBuilder();
+                for (String column : columns) {
+                    String value = columnType.get(column);
                     switch (value) {
                         case "TIMESTAMP":
+                            columnString.append(column).append("=").append(map.get(column)).append(",");
+                            break;
                         case "NCHAR":
-                            sb.append(",").append(tag).append("=").append(map.get(tag));
+                            columnString.append(column).append("=L\"").append(map.get(column)).append("\",");
                             break;
                         case "INT":
                         case "TINYINT":
                         case "SMALLINT":
-                            sb.append(",").append(tag).append("=").append(map.get(tag));
+                            columnString.append(column).append("=").append(map.get(column)).append("i32,");
                             break;
                         case "BIGINT":
-                            sb.append(",").append(tag).append("=").append(map.get(tag));
+                            columnString.append(column).append("=").append(map.get(column)).append("i64,");
                             break;
                         case "FLOAT":
-                            sb.append(",").append(tag).append("=").append(map.get(tag));
+                            columnString.append(column).append("=").append(map.get(column)).append("f32,");
                             break;
                         case "DOUBLE":
-                            sb.append(",").append(tag).append("=").append(map.get(tag));
+                            columnString.append(column).append("=").append(map.get(column)).append("f64,");
                             break;
                         case "BINARY":
                         case "VARCHAR":
-                            sb.append(",").append(tag).append("=\"").append(map.get(tag)).append("\"");
+                            columnString.append(column).append("=\"").append(map.get(column)).append("\",");
                             break;
                         case "BOOL":
-                            sb.append(",").append(tag).append("=").append(map.get(tag));
+                            columnString.append(column).append("=").append(map.get(column)).append(",");
                             break;
                         default:
-                            throw new IllegalArgumentException("Found invalid datatype in table - column " + value
+                            throw new IllegalArgumentException("Found invalid data type in table - column " + value
                                     + " with type " + value.getClass());
                     }
                 }
+                String s = columnString.toString();
+                sb.append(s, 0, s.length() - 1);
+                sb.append(" ").append(map.get(timestampColumn));
+                log.debug("process record: {}", sb);
+                list.add(new SourceRecord(partition, offset.toMap(), topic, null, sb.toString()));
             }
-
-            sb.append(" ");
-            StringBuilder columnString = new StringBuilder();
-            for (String column : columns) {
-                String value = columnType.get(column);
-                switch (value) {
-                    case "TIMESTAMP":
-                        columnString.append(column).append("=").append(map.get(column)).append(",");
-                        break;
-                    case "NCHAR":
-                        columnString.append(column).append("=L\"").append(map.get(column)).append("\",");
-                        break;
-                    case "INT":
-                    case "TINYINT":
-                    case "SMALLINT":
-                        columnString.append(column).append("=").append(map.get(column)).append("i32,");
-                        break;
-                    case "BIGINT":
-                        columnString.append(column).append("=").append(map.get(column)).append("i64,");
-                        break;
-                    case "FLOAT":
-                        columnString.append(column).append("=").append(map.get(column)).append("f32,");
-                        break;
-                    case "DOUBLE":
-                        columnString.append(column).append("=").append(map.get(column)).append("f64,");
-                        break;
-                    case "BINARY":
-                    case "VARCHAR":
-                        columnString.append(column).append("=\"").append(map.get(column)).append("\",");
-                        break;
-                    case "BOOL":
-                        columnString.append(column).append("=").append(map.get(column)).append(",");
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Found invalid data type in table - column " + value
-                                + " with type " + value.getClass());
-                }
-            }
-            String s = columnString.toString();
-            sb.append(s, 0, s.length() - 1);
-            sb.append(" ").append(map.get(timestampColumn));
-            log.debug("process record: {}", sb);
-            list.add(new SourceRecord(partition, offset.toMap(), topic, null, sb.toString()));
         }
         return list;
     }
