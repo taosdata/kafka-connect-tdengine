@@ -41,6 +41,7 @@ public class TableExecutor implements Comparable<TableExecutor>, AutoCloseable {
     private String groupId;
     private String autoOffsetReset;
     List<ConsumerRecords<Map<String, Object>>> records = new LinkedList<>();
+    final int MAX_RECORDS_CACHE = 50;
 
     public TableExecutor(String tableName,
                          String topic,
@@ -118,6 +119,9 @@ public class TableExecutor implements Comparable<TableExecutor>, AutoCloseable {
                     break;
                 } else {
                     records.add(consumerRecords);
+                    if (records.size() > MAX_RECORDS_CACHE){
+                        break;
+                    }
                 }
             }
 
