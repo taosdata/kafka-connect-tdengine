@@ -124,7 +124,7 @@ public abstract class TableMapper {
 
     public abstract PendingRecord doExtractRecord(ResultSet resultSet, Map<String, String> partition);
 
-    public abstract List<SourceRecord> process(ConsumerRecords<Map<String, Object>> records
+    public abstract List<SourceRecord> process(List<ConsumerRecords<Map<String, Object>>> records
             , Map<String, String> partition, TimeStampOffset offset);
 
     public void closeStatement() {

@@ -121,7 +121,7 @@ public class TDengineSourceTask extends SourceTask {
             return Collections.emptyList();
         }
 
-//        log.info("start poll new data from table: {}", executor.getTableName());
+        log.debug("start poll new data from table: {}", executor.getTableName());
         List<SourceRecord> results = new ArrayList<>();
         try {
             executor.startQuery();
