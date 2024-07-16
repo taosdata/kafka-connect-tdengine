@@ -1,12 +1,10 @@
 package com.taosdata.kafka.connect.source;
 
-import com.alibaba.fastjson.JSON;
 import com.taosdata.jdbc.TSDBDriver;
 import com.taosdata.kafka.connect.db.CacheProcessor;
 import com.taosdata.kafka.connect.db.ConnectionProvider;
 import com.taosdata.kafka.connect.db.Processor;
 import com.taosdata.kafka.connect.db.TSDBConnectionProvider;
-import com.taosdata.kafka.connect.enums.ReadMethodEnum;
 import com.taosdata.kafka.connect.util.VersionUtils;
 import org.apache.kafka.common.utils.SystemTime;
 import org.apache.kafka.common.utils.Time;
@@ -19,7 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
-import java.time.LocalTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -30,10 +27,9 @@ import java.util.stream.Collectors;
  */
 public class TDengineSourceTask extends SourceTask {
     private static final Logger log = LoggerFactory.getLogger(TDengineSourceTask.class);
-    private static long totol = 0;
+
     private SourceConfig config;
     private Processor processor;
-    private ReadMethodEnum readMethod;
 
     private final Queue<TableExecutor> executors = new PriorityQueue<>();
     private Map<TableExecutor, Integer> consecutiveEmptyResults;
@@ -51,21 +47,11 @@ public class TDengineSourceTask extends SourceTask {
         properties.setProperty(TSDBDriver.PROPERTY_KEY_USER, config.getConnectionUser());
         properties.setProperty(TSDBDriver.PROPERTY_KEY_PASSWORD, config.getConnectionPassword());
         properties.setProperty(TSDBDriver.PROPERTY_KEY_CHARSET, "UTF-8");
+        String convert = props.getOrDefault("value.converter", "org.apache.kafka.connect.storage.StringConverter");
         ConnectionProvider provider = new TSDBConnectionProvider(config.getConnectionUrl(), properties,
                 config.getConnectionAttempts(), config.getConnectionBackoffMs());
         processor = new CacheProcessor<>(provider);
         processor.setDbName(config.getConnectionDb());
-
-        Map<String, String> urls = null;
-        if (ReadMethodEnum.SUBSCRIPTION == config.getReadMethod()) {
-            urls = UrlParser.parse(config.getConnectionUrl());
-            if (null == urls || urls.isEmpty()) {
-                throw new ConnectException("url is empty");
-            }
-            readMethod = ReadMethodEnum.SUBSCRIPTION;
-        } else {
-            readMethod = ReadMethodEnum.QUERY;
-        }
 
         List<String> tables = config.getTables();
         if (null != tables && !tables.isEmpty()) {
@@ -77,18 +63,15 @@ public class TDengineSourceTask extends SourceTask {
                 try {
                     String topicName;
                     String dbName = config.getConnectionDb();
-                    String topicDelimiter = config.getTopicDelimiter();
                     if (config.isTopicPerSuperTable()) {
-                        if (config.isTopicNameIgnoreDb()) {
-                            topicName = config.getTopicPrefix() + topicDelimiter + table;
-                        } else {
-                            topicName = config.getTopicPrefix() + topicDelimiter + dbName + topicDelimiter + table;
-                        }
+                        topicName = config.getTopicPrefix() + "-" + dbName + "-" + table;
                     } else {
-                        topicName = config.getTopicPrefix() + topicDelimiter + dbName;
+                        topicName = config.getTopicPrefix() + "-" + dbName;
                     }
                     log.debug("start poll data from db {} table: {}, to topic: {}", dbName, table, topicName);
-                    executor = new TableExecutor(table, topicName, offset, processor, partition, config, urls);
+                    executor = new TableExecutor(table, topicName, offset, processor, config.getFetchMaxRows(),
+                            partition, config.getTimestampInitial(),
+                            convert, config.getQueryInterval());
                 } catch (SQLException e) {
                     log.error("error occur", e);
                     throw new ConnectException(e);
@@ -109,65 +92,52 @@ public class TDengineSourceTask extends SourceTask {
         // If not in the middle of an update, wait for next update time
         long nextUpdate = executor.getLastUpdate() + config.getPollInterval();
         long now = this.time.milliseconds();
-        long sleepMs = nextUpdate - now;
+        long sleepMs = Math.min(nextUpdate - now, 1000);
         if (sleepMs > 0) {
-            log.debug("Waiting {} ms to poll {} next", sleepMs, executor.getTableName());
+            log.debug("Waiting {} ms to poll {} next", nextUpdate - now, executor.getTableName());
             this.time.sleep(sleepMs);
         } else if (consecutiveEmptyResults.get(executor) > 0) {
-            // rejoin the queue to avoid hammering the DB
-            executor.setLastUpdate(this.time.milliseconds());
-            executors.add(executor);
-            consecutiveEmptyResults.put(executor, 0);
-            return Collections.emptyList();
+            TimeUnit.MILLISECONDS.sleep(config.getPollInterval());
         }
 
         log.debug("start poll new data from table: {}", executor.getTableName());
         List<SourceRecord> results = new ArrayList<>();
         try {
             executor.startQuery();
-            if (readMethod == ReadMethodEnum.SUBSCRIPTION) {
-                results = executor.extractRecords();
-                resetAndRequeueHead(executor, false);
-                executor.commitOffset();
-                if (!results.isEmpty()) {
-                    totol += results.size();
-                    log.trace("**********poll from table: {} received results poll len: {}, totol:{}", executor.getTableName(), results.size(), totol);
-                }
-                return results;
-            } else {
-                int batchMaxRows = config.getFetchMaxRows();
-                boolean hadNext = true;
-                while (results.size() < batchMaxRows && (hadNext = executor.next())) {
-                    executor.clearEndQuery();
-                    SourceRecord record = executor.extractRecord();
-                    if (record.value() instanceof List) {
-                        for (Struct struct : (List<Struct>) record.value()) {
-                            results.add(new SourceRecord(record.sourcePartition(), record.sourceOffset(), record.topic(), struct.schema(), struct));
-                        }
-                    } else {
-                        results.add(record);
-                    }
-                }
-                if (!hadNext) {
-                    resetAndRequeueHead(executor, false);
-                }
 
-                if (results.isEmpty()) {
-                    consecutiveEmptyResults.compute(executor, (k, v) -> v + 1);
-                    log.debug("No updates for {}", executor.getTableName());
-                    return Collections.emptyList();
+            int batchMaxRows = config.getFetchMaxRows();
+            boolean hadNext = true;
+            while (results.size() < batchMaxRows && (hadNext = executor.next())) {
+                executor.clearLatestQuery();
+                SourceRecord record = executor.extractRecord();
+                if (record.value() instanceof List) {
+                    for (Struct struct : (List<Struct>) record.value()) {
+                        results.add(new SourceRecord(record.sourcePartition(), record.sourceOffset(), record.topic(), struct.schema(), struct));
+                    }
                 } else {
-                    consecutiveEmptyResults.put(executor, 0);
-                    log.debug("Returning {} records for {}. last record time: {}",
-                            results.size(), executor.getTableName(), results.get(results.size() - 1).timestamp());
-                    return results;
+                    results.add(record);
                 }
             }
+            if (!hadNext) {
+                resetAndRequeueHead(executor, false);
+            }
+
+            if (results.isEmpty()) {
+                consecutiveEmptyResults.compute(executor, (k, v) -> v + 1);
+                log.debug("No updates for {}", executor.getTableName());
+                return null;
+            } else {
+                consecutiveEmptyResults.put(executor, 0);
+                log.debug("Returning {} records for {}. last record time: {}",
+                        results.size(), executor.getTableName(), results.get(results.size() - 1).timestamp());
+                return results;
+            }
+
         } catch (SQLException e) {
             resetAndRequeueHead(executor, true);
             log.error("SQL exception while running query for table: {}", executor.getTableName(), e);
         }
-        return Collections.emptyList();
+        return null;
     }
 
     private void resetAndRequeueHead(TableExecutor executor, boolean resetOffset) {
@@ -180,11 +150,6 @@ public class TDengineSourceTask extends SourceTask {
     @Override
     public void stop() {
         log.info("Stop TDengine Source Task");
-
-        for (TableExecutor executor : executors){
-            executor.close();
-        }
-
         processor.close();
     }
 

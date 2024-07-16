@@ -14,7 +14,7 @@ import java.sql.SQLException;
 import java.util.*;
 
 /**
- * start monitor thread and create config for sourceTask while connector start
+ * start monitor thread and create config for soruceTask while connector start
  */
 public class TDengineSourceConnector extends SourceConnector {
     private static final Logger log = LoggerFactory.getLogger(TDengineSourceConnector.class);
