@@ -3,21 +3,24 @@
   "config": {
     "connector.class": "com.taosdata.kafka.connect.source.TDengineSourceConnector",
     "tasks.max": 1,
-
     "connection.url": "jdbc:TAOS://127.0.0.1:6030",
     "connection.user": "root",
     "connection.password": "taosdata",
     "connection.database": "source",
     "connection.attempts": 3,
     "connection.backoff.ms": 5000,
-
     "poll.interval.ms": 1000,
-    "topic.prefix": "tdengine-",
+    "topic.prefix": "tdengine",
+    "topic.delimeter": "-",
     "fetch.max.rows": 100,
     "timestamp.initial": "2020-01-01 00:00:00",
     "query.interval.ms": 1000,
     "topic.per.stable": true,
-
+    "topic.ignore.db": false,
+    "out.format": "line",
+    "read.method": "query",
+    "subscription.group.id": "gId",
+    "subscription.from": "latest",
     "key.converter": "org.apache.kafka.connect.storage.StringConverter",
     "value.converter": "org.apache.kafka.connect.storage.StringConverter"
   }

@@ -2,16 +2,17 @@ package com.taosdata.kafka.connect.source;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.taosdata.jdbc.tmq.ConsumerRecords;
 import com.taosdata.kafka.connect.db.Processor;
 import com.taosdata.kafka.connect.enums.OutputFormatEnum;
 import com.taosdata.kafka.connect.util.SQLUtils;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
+import org.apache.kafka.connect.source.SourceRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.*;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -29,7 +30,9 @@ public abstract class TableMapper {
     protected List<String> columns = Lists.newArrayList();
     protected List<String> tags = Lists.newArrayList();
     protected SchemaBuilder tagBuilder = SchemaBuilder.struct();
-    protected Map<String, Schema> valueBuilder = Maps.newHashMap();
+    protected Schema valueSchema;
+    protected String timestampColumn;
+    //    protected Map<String, Schema> valueBuilder = Maps.newHashMap();
     protected Map<String, String> columnType = Maps.newHashMap();
     private final OutputFormatEnum format;
 
@@ -50,8 +53,21 @@ public abstract class TableMapper {
         }
         getMetaSchema();
         try {
-            preparedStatement = connection.prepareStatement(
-                    "select * from `" + tableName + "` where _c0 > ? and _c0 <= ? order by _c0 asc");
+            StringBuilder sb = new StringBuilder().append("select _c0,");
+            if (!tags.isEmpty()) {
+                sb.append("`").append(String.join("`,`", tags)).append("`");
+                sb.append(", ");
+            }
+            for (int i = 0; i < columns.size(); i++) {
+                sb.append("`").append(columns.get(i)).append("`");
+                if (i != columns.size() - 1) {
+                    sb.append(",");
+                }
+            }
+            sb.append(" from `").append(tableName).append("` where _c0 > ? and _c0 <= ? order by _c0 asc , `").append(columns.get(0)).append("`");
+            log.debug("execute query sql: {}", sb);
+            preparedStatement = connection.prepareStatement(sb.toString());
+//                    "select * from `" + tableName + "` where _c0 > ? and _c0 <= ? order by _c0 asc and " + columns.get(0));
             if (batchMaxRows > 0) {
                 preparedStatement.setFetchSize(batchMaxRows);
             }
@@ -61,11 +77,15 @@ public abstract class TableMapper {
         return preparedStatement;
     }
 
-    private void getMetaSchema() {
+    public void getMetaSchema() {
+        if (!columns.isEmpty()) {
+            return;
+        }
         ResultSet resultSet = null;
         try (Statement statement = connection.createStatement()) {
             resultSet = statement.executeQuery(SQLUtils.describeTableSql(tableName));
             resultSet.next();
+            timestampColumn = resultSet.getString(1);
             while (resultSet.next()) {
                 String name = resultSet.getString(1);
                 columnType.put(name, resultSet.getString(2));
@@ -79,15 +99,15 @@ public abstract class TableMapper {
                 for (String tag : tags) {
                     tagBuilder.field(tag, convertType(columnType.get(tag)));
                 }
+                SchemaBuilder sb = SchemaBuilder.struct();
+                sb.field(timestampColumn, SchemaBuilder.int64().build());
                 for (String column : columns) {
-                    Schema field = SchemaBuilder.struct()
-                            .field("metric", Schema.OPTIONAL_STRING_SCHEMA)
-                            .field("timestamp", Schema.OPTIONAL_INT64_SCHEMA)
-                            .field("value", convertType(columnType.get(column)))
-                            .field("tags", tagBuilder.build())
-                            .build();
-                    valueBuilder.put(column, field);
+                    sb.field(column, convertType(columnType.get(column)));
                 }
+                if (!tags.isEmpty()) {
+                    sb.field("tags", tagBuilder.optional().build());
+                }
+                valueSchema = sb.build();
             }
         } catch (SQLException e) {
             log.error("get table {} meta failed", tableName, e);
@@ -104,6 +124,9 @@ public abstract class TableMapper {
 
     public abstract PendingRecord doExtractRecord(ResultSet resultSet, Map<String, String> partition);
 
+    public abstract List<SourceRecord> process(List<ConsumerRecords<Map<String, Object>>> records
+            , Map<String, String> partition, TimeStampOffset offset);
+
     public void closeStatement() {
         if (preparedStatement != null) {
             try {
@@ -118,17 +141,6 @@ public abstract class TableMapper {
         tags = Lists.newArrayList();
         columnType = Maps.newHashMap();
         tagBuilder = SchemaBuilder.struct();
-    }
-
-    // may be use in custom query
-    private String appendWhere(String query, String startTimestamp, String endTimestamp) {
-        List<String> split = Arrays.asList(query.split("(?i:\\s+where\\s+)"));
-        String appendedQuery = split.get(0) + " where time > '" + startTimestamp + "' and time <= '" + endTimestamp + "'";
-        if (split.size() > 1) {
-            appendedQuery = appendedQuery + " and " + split.get(1);
-        }
-
-        return appendedQuery;
     }
 
     private Schema convertType(String type) {
@@ -150,9 +162,9 @@ public abstract class TableMapper {
                 return Schema.OPTIONAL_BOOLEAN_SCHEMA;
             case "NCHAR":
             case "JSON":
-                return Schema.OPTIONAL_STRING_SCHEMA;
             case "BINARY":
-                return Schema.OPTIONAL_BYTES_SCHEMA;
+            case "VARCHAR":
+                return Schema.OPTIONAL_STRING_SCHEMA;
             default:
                 return null;
         }

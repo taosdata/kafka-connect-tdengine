@@ -1,9 +1,9 @@
 package com.taosdata.kafka.connect.source;
 
-import com.taosdata.kafka.connect.config.ConnectionConfig;
-import com.taosdata.kafka.connect.config.QueryIntervalValidator;
-import com.taosdata.kafka.connect.config.TimestampInitialValidator;
+import com.taosdata.kafka.connect.config.*;
+import com.taosdata.kafka.connect.enums.ReadMethodEnum;
 import org.apache.kafka.common.config.ConfigDef;
+import org.apache.kafka.common.config.ConfigException;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
@@ -65,14 +65,60 @@ public class SourceConfig extends ConnectionConfig {
     private static final String TOPIC_PER_SUPER_TABLE_DOC = "Whether to create a topic for each super table, default is true";
     private static final String TOPIC_PER_SUPER_TABLE_DISPLAY = "Topic for each Super Table";
 
+    public static final String TOPIC_NAME_IGNORE_DB = "topic.ignore.db";
+    private static final boolean TOPIC_NAME_IGNORE_DB_DEFAULT = false;
+    private static final String TOPIC_NAME_IGNORE_DB_DOC = "Whether to ignore the database name when creating a topic, default is false. only valid when topic.per.stable is true";
+    private static final String TOPIC_NAME_IGNORE_DB_DISPLAY = "Ignore Database Name";
+
+    private static final String OUT_FORMAT_CONFIG = "out.format";
+    private static final String OUT_FORMAT_CONFIG_DEFAULT = "line";
+    private static final String OUT_FORMAT_CONFIG_DOC = "out format for writing data to kafka";
+    private static final String OUT_FORMAT_CONFIG_DISPLAY = "out format may be one of json or line";
+
+    public static final String TOPIC_DELIMITER = "topic.delimiter";
+    private static final String TOPIC_DELIMITER_DEFAULT = "-";
+    private static final String TOPIC_DELIMITER_DOC = "The delimiter for topic name, default is '-'";
+    private static final String TOPIC_DELIMITER_DISPLAY = "Topic Delimiter";
+
+    // query TDengine data method : subscription or query
+    public static final String READ_METHOD = "read.method";
+    private static final String READ_METHOD_DEFAULT = "subscription";
+    private static final String READ_METHOD_DOC = "read method for query TDengine data, default is subscription";
+    private static final String READ_METHOD_DISPLAY = "read method may be one of subscription or query";
+
+    public static final String SUBSCRIPTION_GROUP_ID = "subscription.group.id";
+    public static final String SUBSCRIPTION_GROUP_ID_DEFAULT = null;
+    private static final String SUBSCRIPTION_GROUP_ID_DOC = "subscription group id for subscription data from TDengine";
+    private static final String SUBSCRIPTION_GROUP_ID_DISPLAY = "subscription group id";
+
+    public static final String SUBSCRIPTION_WAL_ONLY =  "subscription.wal.only";
+    private static final boolean SUBSCRIPTION_WAL_ONLY_DEFAULT = true;
+    private static final String SUBSCRIPTION_WAL_ONLY_DOC = "only subscription wal data from TDengine";
+    private static final String SUBSCRIPTION_WAL_ONLY_DISPLAY = "only subscription wal data";
+
+    // subscription from : latest or earliest
+    public static final String SUBSCRIPTION_AUTO_OFFSET_RESET =  "subscription.from";
+    private static final String SUBSCRIPTION_AUTO_OFFSET_RESET_DEFAULT = "latest";
+    private static final String SUBSCRIPTION_AUTO_OFFSET_RESET_DOC = "subscription from latest or earliest";
+    private static final String SUBSCRIPTION_AUTO_OFFSET_RESET_DISPLAY = "subscription from latest or earliest";
+
     private final int pollInterval;
     //    private boolean monitorTables;
     private final String topicPrefix;
     private final Timestamp timestampInitial;
     private final int fetchMaxRows;
-    private long queryInterval = QUERY_INTERVAL_DEFAULT;  // default is null, which means query all data;
+    private final long queryInterval;  // default is null, which means query all data;
     private final List<String> tables;
     private final boolean topicPerSuperTable;
+    private final boolean topicNameIgnoreDb;
+    private final String outFormat;
+
+    private final String topicDelimiter;
+
+    private final ReadMethodEnum readMethod;
+    private final String subscriptionGroupId;
+    private final boolean subscriptionWalOnly;
+    private final String subscriptionAutoOffsetReset;
 
     public SourceConfig(Map<?, ?> props) {
         super(config(), props);
@@ -90,6 +136,22 @@ public class SourceConfig extends ConnectionConfig {
         this.fetchMaxRows = this.getInt(FETCH_MAX_ROWS_CONFIG);
         this.tables = this.getList(TABLES_CONFIG);
         this.topicPerSuperTable = this.getBoolean(TOPIC_PER_SUPER_TABLE);
+        this.topicNameIgnoreDb = this.getBoolean(TOPIC_NAME_IGNORE_DB);
+        this.outFormat = this.getString(OUT_FORMAT_CONFIG).toLowerCase();
+        this.topicDelimiter = this.getString(TOPIC_DELIMITER);
+        this.subscriptionGroupId = this.getString(SUBSCRIPTION_GROUP_ID);
+
+        if("subscription".equalsIgnoreCase(this.getString(READ_METHOD))){
+            this.readMethod = ReadMethodEnum.SUBSCRIPTION;
+            if (null == this.subscriptionGroupId || this.subscriptionGroupId.trim().length() == 0) {
+                throw new ConfigException("subscription.group.id must be set when read.method is subscription");
+            }
+        }else {
+            this.readMethod = ReadMethodEnum.QUERY;
+        }
+
+        this.subscriptionWalOnly = this.getBoolean(SUBSCRIPTION_WAL_ONLY);
+        this.subscriptionAutoOffsetReset = this.getString(SUBSCRIPTION_AUTO_OFFSET_RESET);
     }
 
     public static ConfigDef config() {
@@ -175,11 +237,89 @@ public class SourceConfig extends ConnectionConfig {
                         TOPIC_PER_SUPER_TABLE_DISPLAY
                 )
                 .define(
+                        TOPIC_NAME_IGNORE_DB,
+                        ConfigDef.Type.BOOLEAN,
+                        TOPIC_NAME_IGNORE_DB_DEFAULT,
+                        ConfigDef.Importance.LOW,
+                        TOPIC_NAME_IGNORE_DB_DOC,
+                        READ,
+                        ++orderInGroup,
+                        ConfigDef.Width.SHORT,
+                        TOPIC_NAME_IGNORE_DB_DISPLAY
+                )
+                .define(
+                        OUT_FORMAT_CONFIG,
+                        ConfigDef.Type.STRING,
+                        OUT_FORMAT_CONFIG_DEFAULT,
+                        OutFormatValidator.INSTANCE,
+                        ConfigDef.Importance.MEDIUM,
+                        OUT_FORMAT_CONFIG_DOC,
+                        READ,
+                        ++orderInGroup,
+                        ConfigDef.Width.SHORT,
+                        OUT_FORMAT_CONFIG_DISPLAY
+                )
+                .define(
+                        TOPIC_DELIMITER,
+                        ConfigDef.Type.STRING,
+                        TOPIC_DELIMITER_DEFAULT,
+                        ConfigDef.Importance.LOW,
+                        TOPIC_DELIMITER_DOC,
+                        READ,
+                        ++orderInGroup,
+                        ConfigDef.Width.SHORT,
+                        TOPIC_DELIMITER_DISPLAY
+                )
+                .define(
                         TABLES_CONFIG,
                         ConfigDef.Type.LIST,
-                        Collections.EMPTY_LIST,
+                        Collections.emptyList(),
                         ConfigDef.Importance.LOW,
                         TABLES_DOC)
+                .define(
+                        READ_METHOD,
+                        ConfigDef.Type.STRING,
+                        READ_METHOD_DEFAULT,
+                        SubscriptionValidator.INSTANCE,
+                        ConfigDef.Importance.LOW,
+                        READ_METHOD_DOC,
+                        READ,
+                        ++orderInGroup,
+                        ConfigDef.Width.SHORT,
+                        READ_METHOD_DISPLAY
+                )
+                .define(
+                        SUBSCRIPTION_GROUP_ID,
+                        ConfigDef.Type.STRING,
+                        SUBSCRIPTION_GROUP_ID_DEFAULT,
+                        ConfigDef.Importance.LOW,
+                        SUBSCRIPTION_GROUP_ID_DOC,
+                        READ,
+                        ++orderInGroup,
+                        ConfigDef.Width.SHORT,
+                        SUBSCRIPTION_GROUP_ID_DISPLAY
+                )
+                .define(
+                        SUBSCRIPTION_WAL_ONLY,
+                        ConfigDef.Type.BOOLEAN,
+                        SUBSCRIPTION_WAL_ONLY_DEFAULT,
+                        ConfigDef.Importance.LOW,
+                        SUBSCRIPTION_WAL_ONLY_DOC,
+                        READ,
+                        ++orderInGroup,
+                        ConfigDef.Width.SHORT,
+                        SUBSCRIPTION_WAL_ONLY_DISPLAY
+                )
+                .define(
+                        SUBSCRIPTION_AUTO_OFFSET_RESET,
+                        ConfigDef.Type.STRING,
+                        SUBSCRIPTION_AUTO_OFFSET_RESET_DEFAULT,
+                        ConfigDef.Importance.LOW,
+                        SUBSCRIPTION_AUTO_OFFSET_RESET_DOC,
+                        READ,
+                        ++orderInGroup,
+                        ConfigDef.Width.SHORT,
+                        SUBSCRIPTION_AUTO_OFFSET_RESET_DISPLAY)
                 ;
     }
 
@@ -213,5 +353,33 @@ public class SourceConfig extends ConnectionConfig {
 
     public boolean isTopicPerSuperTable() {
         return topicPerSuperTable;
+    }
+
+    public boolean isTopicNameIgnoreDb() {
+        return topicNameIgnoreDb;
+    }
+
+    public String getOutFormat() {
+        return outFormat;
+    }
+
+    public String getTopicDelimiter() {
+        return topicDelimiter;
+    }
+
+    public ReadMethodEnum getReadMethod() {
+        return readMethod;
+    }
+
+    public String getSubscriptionGroupId() {
+        return subscriptionGroupId;
+    }
+
+    public boolean isSubscriptionWalOnly() {
+        return subscriptionWalOnly;
+    }
+
+    public String getSubscriptionAutoOffsetReset() {
+        return subscriptionAutoOffsetReset;
     }
 }
