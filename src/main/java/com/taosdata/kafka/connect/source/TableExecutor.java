@@ -170,7 +170,7 @@ public class TableExecutor implements Comparable<TableExecutor>, AutoCloseable {
 
     public void commitOffset() throws SQLException {
         if (ReadMethodEnum.SUBSCRIPTION == readMethod) {
-            consumer.commitAsync();
+            consumer.commitSync();
             records.clear();
         }
     }
