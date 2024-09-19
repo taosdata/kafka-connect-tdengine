@@ -97,6 +97,7 @@ public class TableExecutor implements Comparable<TableExecutor>, AutoCloseable {
             properties.setProperty(TMQConstants.GROUP_ID, this.groupId);
             properties.setProperty(TMQConstants.AUTO_OFFSET_RESET, this.autoOffsetReset);
             properties.setProperty(TMQConstants.VALUE_DESERIALIZER, "com.taosdata.kafka.connect.source.StringDeserializer");
+            properties.setProperty("precision", config.getTimestampType());
             consumer = new TaosConsumer<>(properties);
             consumer.subscribe(Collections.singleton(topic));
         }

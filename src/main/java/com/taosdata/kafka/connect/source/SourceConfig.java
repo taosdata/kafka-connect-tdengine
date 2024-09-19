@@ -1,6 +1,9 @@
 package com.taosdata.kafka.connect.source;
 
+import com.taosdata.jdbc.enums.SchemalessProtocolType;
+import com.taosdata.jdbc.enums.SchemalessTimestampType;
 import com.taosdata.kafka.connect.config.*;
+import com.taosdata.kafka.connect.enums.DataPrecision;
 import com.taosdata.kafka.connect.enums.ReadMethodEnum;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigException;
@@ -70,6 +73,12 @@ public class SourceConfig extends ConnectionConfig {
     private static final String TOPIC_NAME_IGNORE_DB_DOC = "Whether to ignore the database name when creating a topic, default is false. only valid when topic.per.stable is true";
     private static final String TOPIC_NAME_IGNORE_DB_DISPLAY = "Ignore Database Name";
 
+    public static final String DATA_PRECISION = "data.precision";
+    public static final String DATA_PRECISION_DEFAULT = "";
+    private static final String DATA_PRECISION_DOC =
+            "the precision of the schemaless data, this is valid only in line format";
+    private static final String DATA_PRECISION_DISPLAY = "Data Precision";
+
     private static final String OUT_FORMAT_CONFIG = "out.format";
     private static final String OUT_FORMAT_CONFIG_DEFAULT = "line";
     private static final String OUT_FORMAT_CONFIG_DOC = "out format for writing data to kafka";
@@ -112,7 +121,7 @@ public class SourceConfig extends ConnectionConfig {
     private final boolean topicPerSuperTable;
     private final boolean topicNameIgnoreDb;
     private final String outFormat;
-
+    private final String timestampType;
     private final String topicDelimiter;
 
     private final ReadMethodEnum readMethod;
@@ -138,6 +147,7 @@ public class SourceConfig extends ConnectionConfig {
         this.topicPerSuperTable = this.getBoolean(TOPIC_PER_SUPER_TABLE);
         this.topicNameIgnoreDb = this.getBoolean(TOPIC_NAME_IGNORE_DB);
         this.outFormat = this.getString(OUT_FORMAT_CONFIG).toLowerCase();
+        this.timestampType = getString(DATA_PRECISION).trim();
         this.topicDelimiter = this.getString(TOPIC_DELIMITER);
         this.subscriptionGroupId = this.getString(SUBSCRIPTION_GROUP_ID);
 
@@ -157,6 +167,18 @@ public class SourceConfig extends ConnectionConfig {
     public static ConfigDef config() {
         int orderInGroup = 0;
         return ConnectionConfig.config()
+                .define(
+                        DATA_PRECISION,
+                        ConfigDef.Type.STRING,
+                        DATA_PRECISION_DEFAULT,
+                        PrecisionValidator.INSTANCE,
+                        ConfigDef.Importance.MEDIUM,
+                        DATA_PRECISION_DOC,
+                        READ,
+                        ++orderInGroup,
+                        ConfigDef.Width.SHORT,
+                        DATA_PRECISION_DISPLAY
+                )
                 .define(
                         POLL_INTERVAL_MS_CONFIG,
                         ConfigDef.Type.INT,
@@ -381,5 +403,9 @@ public class SourceConfig extends ConnectionConfig {
 
     public String getSubscriptionAutoOffsetReset() {
         return subscriptionAutoOffsetReset;
+    }
+
+    public String getTimestampType() {
+        return timestampType;
     }
 }

@@ -33,6 +33,7 @@ public class MonitorThread extends Thread {
     private CountDownLatch countDownLatch;
     private Set<String> tables;
     private Connection connection;
+    private volatile boolean isRunning = false;
 
     public MonitorThread(Map<String, String> config, ConnectorContext context) throws SQLException {
         this.config = new SourceConfig(config);
@@ -75,6 +76,7 @@ public class MonitorThread extends Thread {
 
     @Override
     public void run() {
+        isRunning = true;
         log.info("Monitor process is start");
         while (countDownLatch.getCount() > 0) {
             if (!isTableChange()) {
@@ -85,6 +87,7 @@ public class MonitorThread extends Thread {
                 }
             }
         }
+        isRunning = false;
     }
 
     private synchronized boolean isTableChange() {
@@ -95,10 +98,13 @@ public class MonitorThread extends Thread {
             while (resultSet.next()) {
                 set.add(resultSet.getString(1));
             }
+            resultSet.close();
+
             resultSet = statement.executeQuery(SQLUtils.showTableSql(dbName));
             while (resultSet.next()) {
                 set.add(resultSet.getString(1));
             }
+            resultSet.close();
         } catch (SQLException e) {
             log.error("error occur while show Tables in db {}", config.getConnectionDb(), e);
         }
@@ -121,14 +127,26 @@ public class MonitorThread extends Thread {
 
     public void shutdown() {
         log.info("Monitor Thread shutdown");
+        countDownLatch.countDown();
+
+        int retryTimes = 0;
+        while (isRunning && retryTimes < 30) {
+            try {
+                Thread.sleep(100);
+            } catch (Exception e) {
+                break;
+            }
+            retryTimes++;
+        }
+
+        // wait
         if (null != connection) {
             try {
                 connection.close();
             } catch (SQLException e) {
                 log.error("Monitor thread close connection exception", e);
             }
-
         }
-        countDownLatch.countDown();
+
     }
 }
