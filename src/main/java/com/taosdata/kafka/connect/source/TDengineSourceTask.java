@@ -6,10 +6,13 @@ import com.taosdata.kafka.connect.db.CacheProcessor;
 import com.taosdata.kafka.connect.db.ConnectionProvider;
 import com.taosdata.kafka.connect.db.Processor;
 import com.taosdata.kafka.connect.db.TSDBConnectionProvider;
+import com.taosdata.kafka.connect.enums.OutputFormatEnum;
 import com.taosdata.kafka.connect.enums.ReadMethodEnum;
+import com.taosdata.kafka.connect.util.SQLUtils;
 import com.taosdata.kafka.connect.util.VersionUtils;
 import org.apache.kafka.common.utils.SystemTime;
 import org.apache.kafka.common.utils.Time;
+import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.source.SourceRecord;
@@ -18,7 +21,10 @@ import org.apache.kafka.connect.storage.OffsetStorageReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.LocalTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -55,6 +61,7 @@ public class TDengineSourceTask extends SourceTask {
                 config.getConnectionAttempts(), config.getConnectionBackoffMs());
         processor = new CacheProcessor<>(provider);
         processor.setDbName(config.getConnectionDb());
+
 
         Map<String, String> urls = null;
         if (ReadMethodEnum.SUBSCRIPTION == config.getReadMethod()) {

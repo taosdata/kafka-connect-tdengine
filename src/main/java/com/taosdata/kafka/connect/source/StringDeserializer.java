@@ -2,20 +2,20 @@ package com.taosdata.kafka.connect.source;
 
 import com.taosdata.jdbc.tmq.Deserializer;
 import com.taosdata.jdbc.tmq.DeserializerException;
+import com.taosdata.kafka.connect.enums.DataPrecision;
 
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Types;
+import java.sql.*;
 import java.util.HashMap;
 import java.util.Map;
 
 public class StringDeserializer implements Deserializer<Map<String, Object>> {
     String format;
+    String timestampType;
 
     @Override
     public void configure(Map<?, ?> configs) {
         format = (String) configs.get("format");
+        timestampType = (String) configs.get("precision");
     }
 
     @Override
@@ -25,13 +25,19 @@ public class StringDeserializer implements Deserializer<Map<String, Object>> {
         ResultSetMetaData metaData = data.getMetaData();
         for (int i = 1; i <= metaData.getColumnCount(); i++) {
             if (Types.TIMESTAMP == metaData.getColumnType(i)) {
-                long result = data.getLong(i);
-                if (result > 1_000_000_000_000_000_000L) {
-                    result = result / 1_000_000;
-                } else if (result > 1_000_000_000_000_000L) {
-                    result = result / 1_000;
+                Timestamp result = data.getTimestamp(i);
+                if (timestampType.equalsIgnoreCase(DataPrecision.NS.name())){
+                    long milliseconds = result.getTime();
+                    long nanoseconds = milliseconds * 1000000 + result.getNanos();
+                    map.put(metaData.getColumnLabel(i), nanoseconds);
+                } else if (timestampType.equalsIgnoreCase(DataPrecision.US.name())){
+                    long milliseconds = result.getTime();
+                    long microseconds = milliseconds * 1000 + result.getNanos() / 1000;
+                    map.put(metaData.getColumnLabel(i), microseconds);
+                } else {
+                    long milliseconds = result.getTime();
+                     map.put(metaData.getColumnLabel(i), milliseconds);
                 }
-                map.put(metaData.getColumnLabel(i), result);
             } else if (Types.BINARY == metaData.getColumnType(i)) {
                 byte[] bytes = data.getBytes(i);
                 if (bytes != null) {
