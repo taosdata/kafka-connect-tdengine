@@ -28,11 +28,11 @@ public class StringDeserializer implements Deserializer<Map<String, Object>> {
                 Timestamp result = data.getTimestamp(i);
                 if (timestampType.equalsIgnoreCase(DataPrecision.NS.name())){
                     long milliseconds = result.getTime();
-                    long nanoseconds = milliseconds * 1000000 + result.getNanos();
+                    long nanoseconds = (milliseconds / 1000) * 1000000000L + result.getNanos();
                     map.put(metaData.getColumnLabel(i), nanoseconds);
                 } else if (timestampType.equalsIgnoreCase(DataPrecision.US.name())){
                     long milliseconds = result.getTime();
-                    long microseconds = milliseconds * 1000 + result.getNanos() / 1000;
+                    long microseconds = (milliseconds / 1000) * 1000000L + result.getNanos() / 1000;
                     map.put(metaData.getColumnLabel(i), microseconds);
                 } else {
                     long milliseconds = result.getTime();
