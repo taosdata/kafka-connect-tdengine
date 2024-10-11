@@ -1,13 +1,16 @@
 package com.taosdata.kafka.connect.db;
 
-import com.taosdata.jdbc.SchemalessWriter;
+import com.taosdata.jdbc.AbstractConnection;
 import com.taosdata.jdbc.enums.SchemalessProtocolType;
 import com.taosdata.jdbc.enums.SchemalessTimestampType;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 /**
  * cache connection and provide write schemaless function
@@ -77,8 +80,8 @@ public class CacheProcessor<T extends ConnectionProvider> implements Processor {
 
     @Override
     public boolean schemalessInsert(String[] records, SchemalessProtocolType protocolType, SchemalessTimestampType timestampType) throws SQLException {
-        SchemalessWriter writer = new SchemalessWriter(this.getConnection());
-        writer.write(records, protocolType, timestampType);
+        AbstractConnection conn = this.getConnection().unwrap(AbstractConnection.class);
+        conn.write(records, protocolType, timestampType);
         return true;
     }
 

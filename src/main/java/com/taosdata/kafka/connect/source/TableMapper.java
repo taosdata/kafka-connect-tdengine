@@ -2,6 +2,7 @@ package com.taosdata.kafka.connect.source;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.taosdata.jdbc.TaosGlobalConfig;
 import com.taosdata.jdbc.tmq.ConsumerRecords;
 import com.taosdata.kafka.connect.db.Processor;
 import com.taosdata.kafka.connect.enums.OutputFormatEnum;
@@ -12,6 +13,7 @@ import org.apache.kafka.connect.source.SourceRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.UnsupportedEncodingException;
 import java.sql.*;
 import java.util.List;
 import java.util.Map;
@@ -167,6 +169,23 @@ public abstract class TableMapper {
                 return Schema.OPTIONAL_STRING_SCHEMA;
             default:
                 return null;
+        }
+    }
+
+    protected Object getValue(Object value, String type) throws RuntimeException {
+        switch (type) {
+            case "BINARY":
+            case "VARCHAR":
+                if (value instanceof byte[]) {
+                    String charset = TaosGlobalConfig.getCharset();
+                    try {
+                        return new String((byte[]) value, charset);
+                    } catch (UnsupportedEncodingException e) {
+                        throw new RuntimeException(e.getMessage());
+                    }
+                }
+            default:
+                return value;
         }
     }
 }
