@@ -18,8 +18,11 @@ import java.util.Map;
 public class JsonMapper extends TableMapper {
     private static final Logger log = LoggerFactory.getLogger(JsonMapper.class);
     public static int count;
-    public JsonMapper(String topic, String tableName, int batchMaxRows, Processor processor) throws SQLException {
+
+    private boolean outFormatJsonNoArray = true;
+    public JsonMapper(String topic, String tableName, int batchMaxRows, Processor processor, boolean outFormatJsonNoArray) throws SQLException {
         super(topic, tableName, batchMaxRows, processor, OutputFormatEnum.JSON);
+        this.outFormatJsonNoArray = outFormatJsonNoArray;
     }
 
     @Override
@@ -79,8 +82,13 @@ public class JsonMapper extends TableMapper {
 
                 structs.add(valueStruct);
 
-                pendingRecords.add(new SourceRecord(
-                        partition, offset.toMap(), topic, valueSchema, structs));
+                if (outFormatJsonNoArray){
+                    pendingRecords.add(new SourceRecord(
+                            partition, offset.toMap(), topic, valueSchema, structs.get(0)));
+                }else {
+                    pendingRecords.add(new SourceRecord(
+                            partition, offset.toMap(), topic, valueSchema, structs));
+                }
             }
         }
 
