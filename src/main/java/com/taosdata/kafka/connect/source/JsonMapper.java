@@ -1,12 +1,9 @@
 package com.taosdata.kafka.connect.source;
 
-import com.alibaba.fastjson.JSON;
 import com.taosdata.jdbc.tmq.ConsumerRecord;
 import com.taosdata.jdbc.tmq.ConsumerRecords;
 import com.taosdata.kafka.connect.db.Processor;
 import com.taosdata.kafka.connect.enums.OutputFormatEnum;
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,13 +14,15 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class JsonMapper extends TableMapper {
     private static final Logger log = LoggerFactory.getLogger(JsonMapper.class);
     public static int count;
-    public JsonMapper(String topic, String tableName, int batchMaxRows, Processor processor) throws SQLException {
+
+    private boolean outFormatJsonNoArray = true;
+    public JsonMapper(String topic, String tableName, int batchMaxRows, Processor processor, boolean outFormatJsonNoArray) throws SQLException {
         super(topic, tableName, batchMaxRows, processor, OutputFormatEnum.JSON);
+        this.outFormatJsonNoArray = outFormatJsonNoArray;
     }
 
     @Override
@@ -70,12 +69,12 @@ public class JsonMapper extends TableMapper {
 
                 long ts = (Long) value.get(timestampColumn);
                 for (String tag : tags) {
-                    tagStruct.put(tag, value.get(tag));
+                    tagStruct.put(tag, getValue(value.get(tag), columnType.get(tag)));
                 }
                 TDStruct valueStruct = new TDStruct(valueSchema);
                 valueStruct.put(timestampColumn, ts);
                 for (String column : columns) {
-                    valueStruct.put(column, value.get(column));
+                    valueStruct.put(column, getValue(value.get(column), columnType.get(column)));
                 }
                 if (!tags.isEmpty()) {
                     valueStruct.put("tags", tagStruct);
@@ -83,8 +82,13 @@ public class JsonMapper extends TableMapper {
 
                 structs.add(valueStruct);
 
-                pendingRecords.add(new SourceRecord(
-                        partition, offset.toMap(), topic, valueSchema, structs));
+                if (outFormatJsonNoArray){
+                    pendingRecords.add(new SourceRecord(
+                            partition, offset.toMap(), topic, valueSchema, structs.get(0)));
+                }else {
+                    pendingRecords.add(new SourceRecord(
+                            partition, offset.toMap(), topic, valueSchema, structs));
+                }
             }
         }
 

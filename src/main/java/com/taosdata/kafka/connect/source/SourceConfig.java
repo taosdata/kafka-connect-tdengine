@@ -61,8 +61,10 @@ public class SourceConfig extends ConnectionConfig {
     private static final String FETCH_MAX_ROWS_DISPLAY = "Max Rows Per Batch";
 
     public static final String TABLES_CONFIG = "tables";
-    private static final String TABLES_DOC = "List of tables for this task to watch for changes.";
 
+    private static final String TABLES_DOC = "List of tables for this task to watch for changes.";
+    public static final String OUT_FORMAT_JSON_NO_ARRAY = "out.format.json.no.array";
+    private static final String OUT_FORMAT_JSON_NO_ARRAY_DOC = "out format json record without array";
     public static final String TOPIC_PER_SUPER_TABLE = "topic.per.stable";
     private static final boolean TOPIC_PER_SUPER_TABLE_DEFAULT = true;
     private static final String TOPIC_PER_SUPER_TABLE_DOC = "Whether to create a topic for each super table, default is true";
@@ -121,6 +123,7 @@ public class SourceConfig extends ConnectionConfig {
     private final boolean topicPerSuperTable;
     private final boolean topicNameIgnoreDb;
     private final String outFormat;
+    private final boolean outFormatJsonNoArray;
     private final String timestampType;
     private final String topicDelimiter;
 
@@ -147,6 +150,7 @@ public class SourceConfig extends ConnectionConfig {
         this.topicPerSuperTable = this.getBoolean(TOPIC_PER_SUPER_TABLE);
         this.topicNameIgnoreDb = this.getBoolean(TOPIC_NAME_IGNORE_DB);
         this.outFormat = this.getString(OUT_FORMAT_CONFIG).toLowerCase();
+        this.outFormatJsonNoArray = this.getBoolean(OUT_FORMAT_JSON_NO_ARRAY);
         this.timestampType = getString(DATA_PRECISION).trim();
         this.topicDelimiter = this.getString(TOPIC_DELIMITER);
         this.subscriptionGroupId = this.getString(SUBSCRIPTION_GROUP_ID);
@@ -282,6 +286,12 @@ public class SourceConfig extends ConnectionConfig {
                         OUT_FORMAT_CONFIG_DISPLAY
                 )
                 .define(
+                        OUT_FORMAT_JSON_NO_ARRAY,
+                        ConfigDef.Type.BOOLEAN,
+                        true,
+                        ConfigDef.Importance.LOW,
+                        OUT_FORMAT_JSON_NO_ARRAY_DOC)
+                .define(
                         TOPIC_DELIMITER,
                         ConfigDef.Type.STRING,
                         TOPIC_DELIMITER_DEFAULT,
@@ -407,5 +417,9 @@ public class SourceConfig extends ConnectionConfig {
 
     public String getTimestampType() {
         return timestampType;
+    }
+
+    public Boolean getOutFormatJsonNoArray() {
+        return outFormatJsonNoArray;
     }
 }

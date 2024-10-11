@@ -62,7 +62,7 @@ public class TableExecutor implements Comparable<TableExecutor>, AutoCloseable {
         if (config.getOutFormat().equalsIgnoreCase("line")) {
             mapper = new LineMapper(topic, tableName, config.getFetchMaxRows(), processor);
         } else {
-            mapper = new JsonMapper(topic, tableName, config.getFetchMaxRows(), processor);
+            mapper = new JsonMapper(topic, tableName, config.getFetchMaxRows(), processor, config.getOutFormatJsonNoArray());
         }
 
         this.readMethod = config.getReadMethod();

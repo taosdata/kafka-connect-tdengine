@@ -145,7 +145,7 @@ public class LineMapper extends TableMapper {
                                 break;
                             case "BINARY":
                             case "VARCHAR":
-                                sb.append(",").append(tag).append("=\"").append(map.get(tag)).append("\"");
+                                sb.append(",").append(tag).append("=\"").append(getValue(map.get(tag), "BINARY")).append("\"");
                                 break;
                             case "BOOL":
                                 sb.append(",").append(tag).append("=").append(map.get(tag));
@@ -184,7 +184,7 @@ public class LineMapper extends TableMapper {
                             break;
                         case "BINARY":
                         case "VARCHAR":
-                            columnString.append(column).append("=\"").append(map.get(column)).append("\",");
+                            columnString.append(column).append("=\"").append(getValue(map.get(column), "BINARY")).append("\",");
                             break;
                         case "BOOL":
                             columnString.append(column).append("=").append(map.get(column)).append(",");
