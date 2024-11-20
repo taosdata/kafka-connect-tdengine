@@ -155,6 +155,7 @@ public abstract class TableMapper {
                 return Schema.OPTIONAL_INT32_SCHEMA;
             case "TIMESTAMP":
             case "BIGINT":
+            case "BIGINT UNSIGNED":
                 return Schema.OPTIONAL_INT64_SCHEMA;
             case "FLOAT":
                 return Schema.OPTIONAL_FLOAT32_SCHEMA;
