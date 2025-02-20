@@ -53,7 +53,7 @@
 ## 5. 测试
 ### 5.1 运行测试
 项目目录下执行 `mvn test` 运行测试，测试用例会连接到本地的 TDengine 服务器与 taosAdapter 进行测试。
-运行测试后，最终会打印类似如下结果。如果所有用例通过，Failures 和 Errors 都是 0.
+运行测试后，最终会打印类似如下结果。如果所有用例通过，Failures 和 Errors 都是 0。
 ```
 [INFO] Results:
 [INFO] 

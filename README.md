@@ -65,11 +65,11 @@ The test cases use the JUnit framework. Generally, resources are typically initi
 Performance testing is in progress.
 
 ## 6. CI/CD
-- [Build Workflow](https://github.com/taosdata/taos-connector-jdbc/actions/workflows/build.yml)
-- [Code Coverage](https://app.codecov.io/gh/taosdata/taos-connector-jdbc)
+- [Build Workflow](https://github.com/taosdata/kafka-connect-tdengine/actions/workflows/build.yml)
+- [Code Coverage](https://app.codecov.io/gh/taosdata/kafka-connect-tdengine)
 
 ## 7. Submitting Issues
-We welcome the submission of [GitHub Issue](https://github.com/taosdata/taos-connector-jdbc/issues/new?template=Blank+issue). When submitting, please provide the following information:
+We welcome the submission of [GitHub Issue](https://github.com/taosdata/kafka-connect-tdengine/issues/new?template=Blank+issue). When submitting, please provide the following information:
 
 - Problem description, whether it always occurs, and it's best to include a detailed call stack.
 - Kafka version.
@@ -85,8 +85,8 @@ We welcome developers to contribute to this project. When submitting PRs, please
 1. Modify the code, ensure all unit tests pass, and add new unit tests to verify the changes.
 1. Push the changes to the remote branch (`git push origin my_branch`).
 1. Create a Pull Request on GitHub ([how to create a pull request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request)).
-1. After submitting the PR, you can find your PR through the [Pull Request](https://github.com/taosdata/taos-connector-jdbc/pulls). Click on the corresponding link to see if the CI for your PR has passed. If it has passed, it will display "All checks have passed". Regardless of whether the CI passes or not, you can click "Show all checks" -> "Details" to view the detailed test case logs.
-1. After submitting the PR, if CI passes, you can find your PR on the [codecov](https://app.codecov.io/gh/taosdata/taos-connector-jdbc/pulls) page to check the test coverage.
+1. After submitting the PR, you can find your PR through the [Pull Request](https://github.com/taosdata/kafka-connect-tdengine/pulls). Click on the corresponding link to see if the CI for your PR has passed. If it has passed, it will display "All checks have passed". Regardless of whether the CI passes or not, you can click "Show all checks" -> "Details" to view the detailed test case logs.
+1. After submitting the PR, if CI passes, you can find your PR on the [codecov](https://app.codecov.io/gh/taosdata/kafka-connect-tdengine/pulls) page to check the test coverage.
 
 ## 9. References
 - [TDengine Official Website](https://www.tdengine.com/) 
